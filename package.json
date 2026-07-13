@@ -1,0 +1,14 @@
+{
+  "name": "learning-platform",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev:web": "pnpm --filter web dev",
+    "dev:api": "pnpm --filter api start:dev",
+    "dev:ai": "cd apps/ai && uvicorn app.main:app --reload",
+    "dev:all": "concurrently \"pnpm dev:web\" \"pnpm dev:api\" \"pnpm dev:ai\""
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

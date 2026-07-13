@@ -1,0 +1,452 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_DATABASE_URL")
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ENUMS
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+enum PlanTier {
+  STARTER
+  GROWTH
+  ENTERPRISE
+}
+
+enum UserRole {
+  LEARNER
+  MANAGER
+  ORG_ADMIN
+  PLATFORM_ADMIN
+}
+
+enum Language {
+  EN
+  AR
+}
+
+enum AssessmentStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum ExperienceLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum PathStatus {
+  DRAFT
+  ACTIVE
+  COMPLETED
+  ARCHIVED
+}
+
+enum ModuleType {
+  READING
+  VIDEO
+  EXERCISE
+  QUIZ
+}
+
+enum ResourceType {
+  ARTICLE
+  VIDEO
+  DOCUMENTATION
+  PODCAST
+}
+
+enum ExerciseType {
+  CODING
+  WRITTEN
+  MULTIPLE_CHOICE
+  SCENARIO
+}
+
+enum ProgressStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum CompletionEntityType {
+  MODULE
+  MILESTONE
+  PATH
+}
+
+enum AiFeature {
+  ASSESSMENT
+  PATH_GENERATION
+  RESOURCE_CURATION
+  QUIZ_EVALUATION
+}
+
+enum InvitationStatus {
+  PENDING
+  IN_PROGRESS
+  ACCEPTED
+  REVOKED
+  EXPIRED
+}
+
+enum NotificationType {
+  PATH_READY
+  MILESTONE_COMPLETE
+  STALLED_ALERT
+  EXERCISE_PASSED
+  BUDGET_WARNING
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// MODELS
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+model Organization {
+  id                   String           @id @default(cuid())
+  name                 String
+  slug                 String           @unique
+  logoUrl              String?
+  industry             String?
+  timezone             String           @default("Asia/Dubai")
+  planTier             PlanTier         @default(STARTER)
+  maxEmployees         Int              @default(50)
+  aiTokensUsed         BigInt           @default(0)
+  aiTokensBudget       BigInt           @default(10000000)
+  stripeCustomerId     String?          @unique
+  stripeSubscriptionId String?          @unique
+  isSuspended          Boolean          @default(false)
+  suspendedReason      String?
+  defaultLanguage      Language         @default(EN)
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+
+  users           User[]
+  assessments     Assessment[]
+  learningPaths   LearningPath[]
+  aiUsageLogs     AiUsageLog[]
+  departments     Department[]
+  notifications   Notification[]
+  roleDefinitions RoleDefinition[]
+}
+
+model Department {
+  id             String   @id @default(cuid())
+  organizationId String
+  name           String
+  description    String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization    Organization     @relation(fields: [organizationId], references: [id])
+  users           User[]
+  roleDefinitions RoleDefinition[]
+
+  @@unique([organizationId, name])
+}
+
+model RoleDefinition {
+  id                 String   @id @default(cuid())
+  organizationId     String
+  departmentId       String?
+  title              String
+  description        String?
+  learningFocusAreas String[]
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  department   Department?  @relation(fields: [departmentId], references: [id])
+}
+
+model User {
+  id                    String           @id @default(cuid())
+  organizationId        String
+  clerkId               String           @unique
+  email                 String           @unique
+  fullName              String
+  role                  UserRole         @default(LEARNER)
+  departmentId          String?
+  jobTitle              String?
+  avatarUrl             String?
+  preferredLanguage     Language         @default(EN)
+  onboardingToken       String?          @unique
+  onboardingTokenExpiry DateTime?
+  onboardingCompletedAt DateTime?
+  invitationStatus      InvitationStatus @default(PENDING)
+  lastActiveAt          DateTime?
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+
+  organization        Organization         @relation(fields: [organizationId], references: [id])
+  department          Department?          @relation(fields: [departmentId], references: [id])
+  assessments         Assessment[]
+  learningPaths       LearningPath[]
+  progress            UserProgress?
+  completions         Completion[]
+  aiUsageLogs         AiUsageLog[]
+  notifications       Notification[]
+  resourceCompletions ResourceCompletion[]
+  exerciseSubmissions ExerciseSubmission[]
+
+  @@index([organizationId])
+  @@index([clerkId])
+  @@index([onboardingToken])
+}
+
+model Assessment {
+  id              String           @id @default(cuid())
+  userId          String
+  organizationId  String
+  status          AssessmentStatus @default(PENDING)
+  conversationLog Json             @default("[]")
+  skillProfile    Json?
+  identifiedRole  String?
+  experienceLevel ExperienceLevel?
+  learningGoals   String[]
+  strongAreas     String[]
+  weakAreas       String[]
+  completedAt     DateTime?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  user         User          @relation(fields: [userId], references: [id])
+  organization Organization  @relation(fields: [organizationId], references: [id])
+  learningPath LearningPath?
+
+  @@index([userId])
+  @@index([organizationId])
+}
+
+model LearningPath {
+  id              String     @id @default(cuid())
+  userId          String
+  organizationId  String
+  assessmentId    String?    @unique
+  title           String
+  description     String
+  domain          String
+  totalMilestones Int        @default(0)
+  estimatedHours  Int        @default(0)
+  status          PathStatus @default(DRAFT)
+  generatedByAi   Boolean    @default(true)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  user         User          @relation(fields: [userId], references: [id])
+  organization Organization  @relation(fields: [organizationId], references: [id])
+  assessment   Assessment?   @relation(fields: [assessmentId], references: [id])
+  milestones   Milestone[]
+  progress     UserProgress[]
+  completions  Completion[]
+
+  @@index([userId])
+  @@index([organizationId])
+}
+
+model Milestone {
+  id                 String    @id @default(cuid())
+  learningPathId     String
+  sequenceOrder      Int
+  title              String
+  description        String
+  learningObjectives String[]
+  estimatedHours     Int       @default(4)
+  isLocked           Boolean   @default(true)
+  completedAt        DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  learningPath LearningPath @relation(fields: [learningPathId], references: [id])
+  modules      Module[]
+  exercises    Exercise[]
+  completions  Completion[]
+
+  @@unique([learningPathId, sequenceOrder])
+  @@index([learningPathId])
+}
+
+model Module {
+  id               String     @id @default(cuid())
+  milestoneId      String
+  sequenceOrder    Int
+  title            String
+  description      String
+  moduleType       ModuleType
+  estimatedMinutes Int        @default(30)
+  isLocked         Boolean    @default(true)
+  completedAt      DateTime?
+  createdAt        DateTime   @default(now())
+
+  milestone           Milestone            @relation(fields: [milestoneId], references: [id])
+  resources           Resource[]
+  completions         Completion[]
+  resourceCompletions ResourceCompletion[]
+
+  @@unique([milestoneId, sequenceOrder])
+  @@index([milestoneId])
+}
+
+model Resource {
+  id              String       @id @default(cuid())
+  moduleId        String
+  resourceType    ResourceType
+  title           String
+  url             String
+  sourcePlatform  String
+  description     String
+  thumbnailUrl    String?
+  durationMinutes Int?
+  qualityScore    Float        @default(0)
+  language        Language     @default(EN)
+  sequenceOrder   Int
+  createdAt       DateTime     @default(now())
+
+  module              Module               @relation(fields: [moduleId], references: [id])
+  resourceCompletions ResourceCompletion[]
+
+  @@index([moduleId])
+}
+
+model ResourceCompletion {
+  id               String   @id @default(cuid())
+  userId           String
+  resourceId       String
+  moduleId         String
+  completedAt      DateTime @default(now())
+  timeSpentSeconds Int      @default(0)
+
+  user     User     @relation(fields: [userId], references: [id])
+  resource Resource @relation(fields: [resourceId], references: [id])
+  module   Module   @relation(fields: [moduleId], references: [id])
+
+  @@unique([userId, resourceId])
+}
+
+model Exercise {
+  id              String       @id @default(cuid())
+  milestoneId     String
+  moduleId        String?
+  title           String
+  instructions    String
+  exerciseType    ExerciseType
+  scenarioContext String?
+  expectedOutput  Json?
+  rubric          Json
+  maxAttempts     Int          @default(3)
+  passingScore    Float        @default(70)
+  isLocked        Boolean      @default(true)
+  createdAt       DateTime     @default(now())
+
+  milestone   Milestone            @relation(fields: [milestoneId], references: [id])
+  submissions ExerciseSubmission[]
+}
+
+model ExerciseSubmission {
+  id             String    @id @default(cuid())
+  userId         String
+  exerciseId     String
+  submissionText String
+  score          Float?
+  feedback       String?
+  criteriaScores Json?
+  status         String    @default("PENDING")
+  attemptNumber  Int       @default(1)
+  evaluatedAt    DateTime?
+  createdAt      DateTime  @default(now())
+
+  user     User     @relation(fields: [userId], references: [id])
+  exercise Exercise @relation(fields: [exerciseId], references: [id])
+}
+
+model UserProgress {
+  id                   String         @id @default(cuid())
+  userId               String         @unique
+  learningPathId       String
+  currentMilestoneId   String?
+  currentModuleId      String?
+  overallCompletionPct Float          @default(0)
+  timeSpentMinutes     Int            @default(0)
+  lastActivityAt       DateTime?
+  streakDays           Int            @default(0)
+  lastStreakDate       DateTime?
+  status               ProgressStatus @default(NOT_STARTED)
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+
+  user         User         @relation(fields: [userId], references: [id])
+  learningPath LearningPath @relation(fields: [learningPathId], references: [id])
+
+  @@index([learningPathId])
+}
+
+model Completion {
+  id               String               @id @default(cuid())
+  userId           String
+  entityType       CompletionEntityType
+  entityId         String
+  score            Float?
+  attempts         Int                  @default(1)
+  passed           Boolean              @default(false)
+  timeSpentMinutes Int                  @default(0)
+  completedAt      DateTime             @default(now())
+
+  // Bidirectional relationships for different entity types
+  learningPathId String?
+  learningPath   LearningPath? @relation(fields: [learningPathId], references: [id])
+  milestoneId    String?
+  milestone      Milestone?    @relation(fields: [milestoneId], references: [id])
+  moduleId       String?
+  module         Module?       @relation(fields: [moduleId], references: [id])
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, entityType, entityId])
+  @@index([userId, entityType])
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  orgId     String
+  type      NotificationType
+  title     String
+  body      String
+  isRead    Boolean          @default(false)
+  data      Json?
+  createdAt DateTime         @default(now())
+
+  user         User         @relation(fields: [userId], references: [id])
+  organization Organization @relation(fields: [orgId], references: [id])
+
+  @@index([userId, isRead])
+}
+
+model AiUsageLog {
+  id             String    @id @default(cuid())
+  organizationId String
+  userId         String
+  feature        AiFeature
+  modelUsed      String
+  tokensInput    Int       @default(0)
+  tokensOutput   Int       @default(0)
+  costUsd        Decimal   @db.Decimal(10, 6)
+  reported       Boolean   @default(false)
+  createdAt      DateTime  @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  user         User         @relation(fields: [userId], references: [id])
+
+  @@index([organizationId, createdAt])
+  @@index([reported])
+}
