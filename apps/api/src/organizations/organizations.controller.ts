@@ -62,6 +62,19 @@ export class OrganizationsController {
     return { success: true, data: await this.service.getStats(id) };
   }
 
+  @Get(':id/profile')
+  @Roles('MANAGER', 'ORG_ADMIN')
+  async getProfile(
+    @Param('id') id: string, 
+    @CurrentUser() user: Prisma.User,
+    @OrgId() orgId: string
+  ) {
+    if (user.role !== 'PLATFORM_ADMIN' && orgId !== id) {
+      throw new ForbiddenException();
+    }
+    return { success: true, data: await this.service.getOrgProfile(id) };
+  }
+
   @Patch(':id')
   @Roles('ORG_ADMIN', 'PLATFORM_ADMIN')
   async update(
@@ -73,6 +86,6 @@ export class OrganizationsController {
     if (user.role !== 'PLATFORM_ADMIN' && orgId !== id) {
       throw new ForbiddenException();
     }
-    return { success: true, data: await this.service.updateOrganization(id, dto) };
+    return { success: true, data: await this.service.updateOrgSettings(id, dto) };
   }
 }

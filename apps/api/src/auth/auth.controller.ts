@@ -66,27 +66,33 @@ export class AuthController {
   @Get('me')
   getMe(@CurrentUser() user: any) {
     return {
-      id: user.id,
-      email: user.email,
-      fullName: user.fullName,
-      role: user.role,
-      avatarUrl: user.avatarUrl,
-      preferredLanguage: user.preferredLanguage,
-      organization: user.organization
-        ? {
-            id: user.organization.id,
-            name: user.organization.name,
-            slug: user.organization.slug,
-            logoUrl: user.organization.logoUrl,
-            planTier: user.organization.planTier,
-          }
-        : null,
-      department: user.department
-        ? {
-            id: user.department.id,
-            name: user.department.name,
-          }
-        : null,
+      success: true,
+      data: {
+        id: user.id,
+        email: user.email,
+        fullName: user.fullName,
+        role: user.role,
+        avatarUrl: user.avatarUrl,
+        preferredLanguage: user.preferredLanguage,
+        organization: user.organization
+          ? {
+              id: user.organization.id,
+              name: user.organization.name,
+              slug: user.organization.slug,
+              logoUrl: user.organization.logoUrl,
+              planTier: user.organization.planTier,
+              defaultLanguage: user.organization.defaultLanguage,
+              aiTokensBudget: Number(user.organization.aiTokensBudget || 0),
+              aiTokensUsed: Number(user.organization.aiTokensUsed || 0),
+            }
+          : null,
+        department: user.department
+          ? {
+              id: user.department.id,
+              name: user.department.name,
+            }
+          : null,
+      }
     };
   }
 }

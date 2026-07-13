@@ -9,7 +9,15 @@ interface DashboardLayoutProps {
   navItems: NavItem[];
   pageTitle: string;
   breadcrumb?: string[];
-  sidebarFooter?: React.ReactNode;
+  org: {
+    name: string;
+    logoUrl: string | null;
+    planTier: string;
+  };
+  user: {
+    fullName: string;
+    role: string;
+  };
 }
 
 export function DashboardLayout({
@@ -17,12 +25,13 @@ export function DashboardLayout({
   navItems,
   pageTitle,
   breadcrumb,
-  sidebarFooter,
+  org,
+  user,
 }: DashboardLayoutProps) {
   return (
     <div className="flex h-screen overflow-hidden bg-slate-950">
       {/* Sidebar Panel */}
-      <Sidebar items={navItems} footer={sidebarFooter} />
+      <Sidebar items={navItems} org={org} user={user} />
 
       {/* Main Container */}
       <div className="flex flex-grow flex-col overflow-hidden md:pl-64">

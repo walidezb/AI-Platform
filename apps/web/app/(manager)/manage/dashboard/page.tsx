@@ -22,7 +22,8 @@ export default async function DashboardPage() {
   // Fetch current user
   let user: User;
   try {
-    user = await serverFetch<User>('/auth/me');
+    const res = await serverFetch<{ success: boolean; data: User }>('/auth/me');
+    user = res.data;
   } catch (err) {
     console.error('Error fetching user profile in DashboardPage:', err);
     redirect('/sign-in');

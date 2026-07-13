@@ -3,8 +3,6 @@ import { redirect } from 'next/navigation';
 import { requireAuth } from '@/lib/auth';
 import { serverFetch } from '@/lib/api-server';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
-import { UserButton } from '@clerk/nextjs';
-import { Badge } from '@/components/ui/badge';
 import { 
   LayoutDashboard, 
   Users, 
@@ -39,7 +37,8 @@ export default async function ManagerLayout({
   // 2. Fetch authenticated profile
   let user: User;
   try {
-    user = await serverFetch<User>('/auth/me');
+    const res = await serverFetch<{ success: boolean; data: User }>('/auth/me');
+    user = res.data;
   } catch (err) {
     console.error('Error fetching user profile in ManagerLayout:', err);
     redirect('/sign-in');
@@ -58,26 +57,13 @@ export default async function ManagerLayout({
     { label: 'Settings',    href: '/manage/settings',    icon: Settings },
   ];
 
-  const sidebarFooter = (
-    <div className="flex items-center gap-3 w-full">
-      <div className="flex items-center justify-center border-r border-slate-900 pr-2 shrink-0">
-        <UserButton />
-      </div>
-      <div className="flex-grow min-w-0">
-        <p className="text-xs font-bold text-white truncate leading-none">{user.fullName}</p>
-        <Badge variant="secondary" className="text-[8px] uppercase tracking-widest font-black px-1.5 py-0 bg-slate-950 border-slate-900 mt-1.5 text-primary leading-none">
-          {user.role === 'ORG_ADMIN' || user.role === 'PLATFORM_ADMIN' ? 'Admin' : 'Manager'}
-        </Badge>
-      </div>
-    </div>
-  );
-
   return (
     <DashboardLayout
       navItems={navItems}
       pageTitle="Manager Portal"
       breadcrumb={['Manager', 'Dashboard']}
-      sidebarFooter={sidebarFooter}
+      org={user.organization || { name: 'Your Workspace', logoUrl: null, planTier: 'STARTER' }}
+      user={user}
     >
       {children}
     </DashboardLayout>

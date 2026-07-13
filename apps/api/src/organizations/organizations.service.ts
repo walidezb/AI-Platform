@@ -106,4 +106,45 @@ export class OrganizationsService {
     const org = await this.prisma.organization.findUnique({ where: { slug } });
     return !org;
   }
+
+  async getOrgProfile(orgId: string) {
+    return this.prisma.organization.findUnique({
+      where: { id: orgId },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        logoUrl: true,
+        industry: true,
+        timezone: true,
+        defaultLanguage: true,
+        planTier: true,
+        aiTokensBudget: true,
+        aiTokensUsed: true,
+        createdAt: true,
+        updatedAt: true,
+        _count: { select: { users: true } }
+      }
+    });
+  }
+
+  async updateOrgSettings(orgId: string, dto: UpdateOrgDto) {
+    return this.prisma.organization.update({
+      where: { id: orgId },
+      data: {
+        name:            dto.name,
+        logoUrl:         dto.logoUrl,
+        industry:        dto.industry,
+        timezone:        dto.timezone,
+        defaultLanguage: dto.defaultLanguage,
+      },
+    });
+  }
+
+  async getPresignedUploadUrl(orgId: string, fileType: string) {
+    return {
+      uploadUrl: null,
+      message: 'Logo upload via URL for MVP'
+    };
+  }
 }

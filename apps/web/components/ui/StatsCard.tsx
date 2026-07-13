@@ -2,6 +2,7 @@ import React from 'react';
 import { LucideIcon } from 'lucide-react';
 import { Card, CardContent } from './card';
 import { cn } from '@/lib/utils';
+import { AnimatedNumber } from './AnimatedNumber';
 
 interface StatsCardProps {
   label: string;
@@ -47,6 +48,27 @@ export function StatsCard({
     );
   }
 
+  const isStringNumeric = typeof value === 'string' && !isNaN(parseFloat(value.replace(/[^0-9.-]/g, '')));
+  const isNumeric = typeof value === 'number' || isStringNumeric;
+
+  let renderValue: React.ReactNode = value;
+  if (isNumeric && !isLoading) {
+    const num = typeof value === 'number' ? value : parseFloat(value.replace(/[^0-9.-]/g, ''));
+    let prefix = '';
+    let suffix = '';
+    if (typeof value === 'string') {
+      if (value.includes('%')) suffix = '%';
+      if (value.includes('$')) prefix = '$';
+    }
+    renderValue = (
+      <AnimatedNumber 
+        value={num} 
+        prefix={prefix} 
+        suffix={suffix} 
+      />
+    );
+  }
+
   return (
     <Card className={cn("bg-card border-border hover:border-primary/20 card-hover transition-all duration-200", className)}>
       <CardContent className="p-6 flex flex-col justify-between h-full">
@@ -60,7 +82,7 @@ export function StatsCard({
         </div>
         <div>
           <div className="font-heading text-3xl font-bold tracking-tight text-white mb-2 fade-in">
-            {value}
+            {renderValue}
           </div>
           {trend && (
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
