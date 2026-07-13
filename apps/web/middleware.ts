@@ -19,7 +19,7 @@ export default clerkMiddleware(async (auth, request) => {
     await auth.protect();
 
     // Check if the user has a role assigned in their public metadata
-    const metadata = (sessionClaims?.publicMetadata || {}) as Record<string, any>;
+    const metadata = (sessionClaims?.publicMetadata || {}) as Record<string, unknown>;
     const role = metadata.role;
 
     // If signed in but no role is assigned yet, redirect to onboarding setup

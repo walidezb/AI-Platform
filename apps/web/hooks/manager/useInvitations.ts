@@ -35,7 +35,7 @@ export function useInvitations() {
   const inviteMutation = useMutation({
     mutationFn: async (dto: { email: string; fullName: string; jobTitle?: string; departmentId?: string }) => {
       const client = createApiClient(getToken);
-      return client.post<{ success: boolean; data: any }>('/invitations/invite', dto);
+      return client.post<{ success: boolean; data: unknown }>('/invitations/invite', dto);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['invitations'] });
@@ -47,7 +47,7 @@ export function useInvitations() {
   const bulkInviteMutation = useMutation({
     mutationFn: async (employees: { email: string; fullName: string; jobTitle?: string; departmentId?: string }[]) => {
       const client = createApiClient(getToken);
-      return client.post<{ success: boolean; data: any }>('/invitations/bulk', { employees });
+      return client.post<{ success: boolean; data: { succeeded: number; failed: number; total: number } }>('/invitations/bulk', { employees });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['invitations'] });
@@ -59,7 +59,7 @@ export function useInvitations() {
   const resendMutation = useMutation({
     mutationFn: async (userId: string) => {
       const client = createApiClient(getToken);
-      return client.post<{ success: boolean; data: any }>(`/invitations/${userId}/resend`);
+      return client.post<{ success: boolean; data: unknown }>(`/invitations/${userId}/resend`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['invitations'] });
