@@ -29,7 +29,7 @@ export function DashboardLayout({
   user,
 }: DashboardLayoutProps) {
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-950">
+    <div className="flex h-screen overflow-hidden bg-background">
       {/* Sidebar Panel */}
       <Sidebar items={navItems} org={org} user={user} />
 

@@ -44,7 +44,7 @@
   --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.4);
 
   --background-image-gradient-primary: linear-gradient(135deg, #4A90D9 0%, #34C9B0 100%);
-  --background-image-gradient-card: linear-gradient(145deg, #1A2433 0%, #111822 100%);
+  --background-image-gradient-card: var(--gradient-card);
 
   --animate-fade-in: fadeIn 0.4s ease-out forwards;
   --animate-slide-up: slideUp 0.3s ease-out forwards;
@@ -53,31 +53,55 @@
 
 @layer base {
   :root {
-    /* ── Light mode (fallback) ── */
-    --background: 0 0% 100%;
-    --foreground: 224 71% 4%;
-    --card: 0 0% 100%;
-    --card-foreground: 224 71% 4%;
+    /* ── Light mode (default) ── */
+    --background: 213 67% 96%;          /* Cloud Mist (#F0F5FB) */
+    --foreground: 216 32% 15%;          /* Slate Ink (#1A2433) */
+
+    --card: 0 0% 100%;                  /* White (#FFFFFF) */
+    --card-foreground: 216 32% 15%;     /* Slate Ink (#1A2433) */
+
     --popover: 0 0% 100%;
-    --popover-foreground: 224 71% 4%;
-    --primary: 243 75% 59%;
+    --popover-foreground: 216 32% 15%;
+
+    --primary: 211 66% 57%;            /* Sky Catalyst (#4A90D9) */
     --primary-foreground: 0 0% 100%;
-    --secondary: 220 14% 96%;
-    --secondary-foreground: 220 9% 46%;
-    --muted: 220 14% 96%;
-    --muted-foreground: 220 9% 46%;
-    --accent: 220 14% 96%;
-    --accent-foreground: 224 71% 4%;
-    --destructive: 0 84% 60%;
+
+    --secondary: 213 56% 40%;          /* Sapphire Depth (#2C5F9E) */
+    --secondary-foreground: 213 67% 96%;
+
+    --muted: 213 67% 92%;
+    --muted-foreground: 213 20% 45%;
+
+    --accent: 170 59% 50%;             /* Aqua Spark (#34C9B0) */
+    --accent-foreground: 216 32% 15%;
+
+    --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 243 75% 59%;
+
+    --border: 213 30% 88%;
+    --input: 213 30% 90%;
+    --ring: 211 66% 57%;
     --radius: 0.625rem;
+
+    /* ── Custom semantic tokens ── */
+    --success: 142 71% 45%;            /* emerald green */
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;             /* amber */
+    --warning-foreground: 0 0% 100%;
+    --info: 199 89% 48%;               /* sky blue */
+    --info-foreground: 0 0% 100%;
+
+    /* ── Gradient tokens ── */
+    --gradient-primary: linear-gradient(135deg, #4A90D9 0%, #34C9B0 100%);
+    --gradient-card: linear-gradient(145deg, #FFFFFF 0%, #F5F7FA 100%);
+    --gradient-glow: radial-gradient(ellipse at top, rgba(74,144,217,0.06) 0%, transparent 60%);
+
+    --glass-bg: rgba(255, 255, 255, 0.7);
+    --glass-border: rgba(26, 36, 51, 0.08);
   }
 
   .dark {
-    /* ── Dark mode (default) ── */
+    /* ── Dark mode (optional) ── */
     --background: 216 32% 10%;          /* Darkened Slate Ink (#101620) */
     --foreground: 213 67% 96%;         /* Cloud Mist (#F0F5FB) */
 
@@ -107,17 +131,20 @@
     --ring: 211 66% 57%;
 
     /* ── Custom semantic tokens ── */
-    --success: 142 71% 45%;            /* emerald green */
+    --success: 142 71% 45%;
     --success-foreground: 0 0% 100%;
-    --warning: 38 92% 50%;             /* amber */
+    --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
-    --info: 199 89% 48%;               /* sky blue */
+    --info: 199 89% 48%;
     --info-foreground: 0 0% 100%;
 
     /* ── Gradient tokens ── */
     --gradient-primary: linear-gradient(135deg, #4A90D9 0%, #34C9B0 100%);
     --gradient-card: linear-gradient(145deg, #1A2433 0%, #111822 100%);
     --gradient-glow: radial-gradient(ellipse at top, rgba(74,144,217,0.15) 0%, transparent 60%);
+
+    --glass-bg: rgba(15, 18, 32, 0.6);
+    --glass-border: rgba(255, 255, 255, 0.06);
   }
 }
 
@@ -165,10 +192,10 @@
 
   /* Glass morphism card */
   .glass {
-    background: rgba(15, 18, 32, 0.6);
+    background: var(--glass-bg, rgba(15, 18, 32, 0.6));
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.06));
   }
 
   /* Glowing border on focus/hover */

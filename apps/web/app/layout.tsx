@@ -28,8 +28,8 @@ export default function RootLayout({
 }>) {
   return (
     <ClerkProvider>
-      <html lang="en" className={cn("dark", "font-sans", geist.variable)}>
-        <body className={`${inter.variable} ${plusJakarta.variable} font-sans antialiased bg-slate-950 text-slate-50 min-h-screen`}>
+      <html lang="en" className={cn("light", "font-sans", geist.variable)}>
+        <body className={`${inter.variable} ${plusJakarta.variable} font-sans antialiased bg-background text-foreground min-h-screen`}>
           <QueryProvider>
             <PostHogProvider>
               <Suspense fallback={null}>
@@ -37,13 +37,13 @@ export default function RootLayout({
               </Suspense>
               {children}
               <Toaster
-                theme="dark"
+                theme="light"
                 position="bottom-right"
                 toastOptions={{
                   style: {
-                    background: 'hsl(216 32% 15%)',
-                    border: '1px solid hsl(216 32% 21%)',
-                    color: 'hsl(213 67% 96%)',
+                    background: 'hsl(var(--card))',
+                    border: '1px solid hsl(var(--border))',
+                    color: 'hsl(var(--foreground))',
                   },
                 }}
               />

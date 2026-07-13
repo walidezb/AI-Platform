@@ -32,7 +32,7 @@ export function Sidebar({ items, org, user }: SidebarProps) {
   const pathname = usePathname();
 
   return (
-    <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 border-r border-border bg-slate-950 flex-col md:flex">
+    <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 border-r border-border bg-card flex-col md:flex">
       {/* Sidebar header (top, above nav) */}
       <div className="flex h-16 items-center gap-3 px-4 py-3 border-b border-border">
         {org.logoUrl ? (
@@ -47,7 +47,7 @@ export function Sidebar({ items, org, user }: SidebarProps) {
           </div>
         )}
         <div className="flex-1 min-w-0">
-          <p className="font-semibold text-sm truncate text-white leading-normal">{org.name}</p>
+          <p className="font-semibold text-sm truncate text-foreground leading-normal">{org.name}</p>
           <p className="text-xs text-muted-foreground capitalize leading-none mt-0.5">
             {org.planTier.toLowerCase()} plan
           </p>
@@ -67,12 +67,12 @@ export function Sidebar({ items, org, user }: SidebarProps) {
               className={cn(
                 "group flex items-center justify-between px-3.5 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 select-none relative",
                 isActive
-                  ? "bg-primary/10 text-white shadow-glow-sm border-l-2 border-primary"
-                  : "text-muted-foreground hover:text-white hover:bg-slate-900/60"
+                  ? "bg-primary/10 text-primary shadow-glow-sm border-l-2 border-primary"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
               )}
             >
               <div className="flex items-center gap-3">
-                <Icon className={cn("h-4 w-4 shrink-0 transition-colors", isActive ? "text-primary" : "text-muted-foreground group-hover:text-white")} />
+                <Icon className={cn("h-4 w-4 shrink-0 transition-colors", isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground")} />
                 <span className={cn(isActive && "bg-gradient-primary bg-clip-text text-transparent font-semibold")}>
                   {item.label}
                 </span>
@@ -88,11 +88,11 @@ export function Sidebar({ items, org, user }: SidebarProps) {
       </nav>
 
       {/* Sidebar footer (bottom, above UserButton) */}
-      <div className="px-4 py-3 border-t border-border bg-slate-950/80 backdrop-blur-sm shrink-0">
+      <div className="px-4 py-3 border-t border-border bg-card/80 backdrop-blur-sm shrink-0">
         <div className="flex items-center gap-2.5">
           <UserButton />
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate text-white leading-normal">{user.fullName}</p>
+            <p className="text-sm font-medium truncate text-foreground leading-normal">{user.fullName}</p>
             <p className="text-xs text-muted-foreground capitalize leading-none mt-0.5">
               {user.role.toLowerCase().replace('_', ' ')}
             </p>
