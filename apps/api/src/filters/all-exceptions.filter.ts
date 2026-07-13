@@ -29,25 +29,24 @@ export class AllExceptionsFilter implements ExceptionFilter {
       Sentry.captureException(exception);
     }
 
-    // Sanitized response (no stack traces in production)
-    const message = exception instanceof HttpException
+    // Sanitized response
+    const rawResponse = exception instanceof HttpException
       ? exception.getResponse()
-      : 'Internal server error';
+      : { message: 'Internal server error' };
 
-    const getErrorMessage = (msg: unknown): string => {
-      if (typeof msg === 'string') return msg;
-      if (typeof msg === 'object' && msg !== null) {
-        const record = msg as Record<string, unknown>;
-        if (typeof record.message === 'string') return record.message;
-        if (Array.isArray(record.message)) return record.message.join(', ');
-      }
-      return 'Something went wrong';
-    };
+    const errorResponseObj = typeof rawResponse === 'string'
+      ? { message: rawResponse }
+      : (rawResponse as Record<string, unknown>);
+
+    const formattedMessage = Array.isArray(errorResponseObj.message)
+      ? errorResponseObj.message.join(', ')
+      : (errorResponseObj.message || 'Something went wrong');
 
     response.status(status).json({
       success: false,
       statusCode: status,
-      message: getErrorMessage(message),
+      ...errorResponseObj,
+      message: formattedMessage,
       timestamp: new Date().toISOString(),
       path: request.url,
     });

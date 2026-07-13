@@ -13,9 +13,8 @@ import { CreateDepartmentDto } from './dto/create-department.dto';
 import { UpdateDepartmentDto } from './dto/update-department.dto';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
-import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { OrgId } from '../auth/decorators/org-id.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
-import * as Prisma from '@prisma/client';
 
 @Controller('departments')
 export class DepartmentsController {
@@ -27,20 +26,32 @@ export class DepartmentsController {
   @Roles('MANAGER', 'ORG_ADMIN')
   async create(
     @Body() dto: CreateDepartmentDto, 
-    @CurrentUser() user: Prisma.User
+    @OrgId() orgId: string
   ) {
     return {
       success: true,
-      data: await this.service.createDepartment(user.organizationId, dto)
+      data: await this.service.createDepartment(orgId, dto)
     };
   }
 
   @Get()
   @Roles('MANAGER', 'ORG_ADMIN', 'LEARNER')
-  async findAll(@CurrentUser() user: Prisma.User) {
+  async findAll(@OrgId() orgId: string) {
     return {
       success: true,
-      data: await this.service.getDepartments(user.organizationId)
+      data: await this.service.getDepartments(orgId)
+    };
+  }
+
+  @Get(':id')
+  @Roles('MANAGER', 'ORG_ADMIN', 'LEARNER')
+  async findOne(
+    @Param('id') id: string,
+    @OrgId() orgId: string
+  ) {
+    return {
+      success: true,
+      data: await this.service.getDepartmentById(id, orgId)
     };
   }
 
@@ -49,11 +60,11 @@ export class DepartmentsController {
   async update(
     @Param('id') id: string,
     @Body() dto: UpdateDepartmentDto,
-    @CurrentUser() user: Prisma.User
+    @OrgId() orgId: string
   ) {
     return {
       success: true,
-      data: await this.service.updateDepartment(id, user.organizationId, dto)
+      data: await this.service.updateDepartment(id, orgId, dto)
     };
   }
 
@@ -61,9 +72,9 @@ export class DepartmentsController {
   @Roles('ORG_ADMIN')
   async remove(
     @Param('id') id: string,
-    @CurrentUser() user: Prisma.User
+    @OrgId() orgId: string
   ) {
-    await this.service.deleteDepartment(id, user.organizationId);
+    await this.service.deleteDepartment(id, orgId);
     return { success: true, message: 'Department deleted' };
   }
 
@@ -73,23 +84,23 @@ export class DepartmentsController {
   @Roles('MANAGER', 'ORG_ADMIN')
   async createRole(
     @Body() dto: CreateRoleDto, 
-    @CurrentUser() user: Prisma.User
+    @OrgId() orgId: string
   ) {
     return {
       success: true,
-      data: await this.service.createRole(user.organizationId, dto)
+      data: await this.service.createRole(orgId, dto)
     };
   }
 
   @Get('roles')
   @Roles('MANAGER', 'ORG_ADMIN', 'LEARNER')
   async getRoles(
-    @CurrentUser() user: Prisma.User,
+    @OrgId() orgId: string,
     @Query('departmentId') departmentId?: string
   ) {
     return {
       success: true,
-      data: await this.service.getRoles(user.organizationId, departmentId)
+      data: await this.service.getRoles(orgId, departmentId)
     };
   }
 
@@ -98,11 +109,11 @@ export class DepartmentsController {
   async updateRole(
     @Param('id') id: string,
     @Body() dto: UpdateRoleDto,
-    @CurrentUser() user: Prisma.User
+    @OrgId() orgId: string
   ) {
     return {
       success: true,
-      data: await this.service.updateRole(id, user.organizationId, dto)
+      data: await this.service.updateRole(id, orgId, dto)
     };
   }
 
@@ -110,9 +121,9 @@ export class DepartmentsController {
   @Roles('ORG_ADMIN')
   async deleteRole(
     @Param('id') id: string,
-    @CurrentUser() user: Prisma.User
+    @OrgId() orgId: string
   ) {
-    await this.service.deleteRole(id, user.organizationId);
+    await this.service.deleteRole(id, orgId);
     return { success: true, message: 'Role deleted' };
   }
 }

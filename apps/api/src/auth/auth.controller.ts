@@ -3,6 +3,8 @@ import { PrismaService } from '../prisma/prisma.service';
 import { Public } from './decorators/public.decorator';
 import { CurrentUser } from './decorators/current-user.decorator';
 
+import { AuthThrottle } from './throttle.config';
+
 interface SyncUserDto {
   clerkId: string;
   email: string;
@@ -15,6 +17,7 @@ export class AuthController {
   constructor(private readonly prisma: PrismaService) {}
 
   @Public()
+  @AuthThrottle()
   @Post('sync')
   async syncUser(@Body() body: SyncUserDto) {
     if (!body.clerkId || !body.email || !body.fullName) {

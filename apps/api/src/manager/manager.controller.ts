@@ -1,8 +1,7 @@
 import { Controller, Get } from '@nestjs/common';
 import { ManagerService } from './manager.service';
-import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { OrgId } from '../auth/decorators/org-id.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
-import * as Prisma from '@prisma/client';
 
 @Controller('manager')
 export class ManagerController {
@@ -10,10 +9,10 @@ export class ManagerController {
 
   @Get('activity')
   @Roles('MANAGER', 'ORG_ADMIN')
-  async getActivity(@CurrentUser() user: Prisma.User) {
+  async getActivity(@OrgId() orgId: string) {
     return {
       success: true,
-      data: await this.service.getRecentActivity(user.organizationId),
+      data: await this.service.getRecentActivity(orgId),
     };
   }
 }

@@ -1,13 +1,7 @@
 import { CanActivate, ExecutionContext, Injectable, ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { UserRole } from '@prisma/client';
-
-const roleHierarchy: Record<UserRole, number> = {
-  [UserRole.LEARNER]: 1,
-  [UserRole.MANAGER]: 2,
-  [UserRole.ORG_ADMIN]: 3,
-  [UserRole.PLATFORM_ADMIN]: 4,
-};
+import { hasRequiredRole } from './role-hierarchy';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
@@ -30,13 +24,8 @@ export class RolesGuard implements CanActivate {
       throw new ForbiddenException('User role not resolved');
     }
 
-    const userRoleValue = roleHierarchy[user.role as UserRole] || 0;
-
-    // Check if user's role meets or exceeds any of the required roles
-    const hasRole = requiredRoles.some((requiredRole) => {
-      const requiredRoleValue = roleHierarchy[requiredRole] || 999;
-      return userRoleValue >= requiredRoleValue;
-    });
+    // Check hierarchy role checks
+    const hasRole = hasRequiredRole(user.role, requiredRoles);
 
     if (!hasRole) {
       throw new ForbiddenException('Insufficient permissions');

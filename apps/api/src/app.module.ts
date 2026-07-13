@@ -1,20 +1,27 @@
 import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { BullModule } from '@nestjs/bull';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { ThrottlerStorageRedisService } from '@nest-lab/throttler-storage-redis';
+
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { ClerkGuard } from './auth/clerk.guard';
 import { RolesGuard } from './auth/roles.guard';
+import { OrgScopeInterceptor } from './auth/org-scope.interceptor';
 import { QueuesModule } from './queues/queues.module';
 import { LoggerModule } from './logger/logger.module';
 import { RequestLoggerMiddleware } from './middleware/request-logger.middleware';
+import { AuditMiddleware } from './middleware/audit.middleware';
 import { OrganizationsModule } from './organizations/organizations.module';
 import { ManagerModule } from './manager/manager.module';
 import { InvitationsModule } from './invitations/invitations.module';
 import { DepartmentsModule } from './departments/departments.module';
+
+import { InternalController } from './internal/internal.controller';
 
 @Module({
   imports: [
@@ -23,6 +30,20 @@ import { DepartmentsModule } from './departments/departments.module';
     }),
     PrismaModule,
     AuthModule,
+    ThrottlerModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (config: ConfigService) => ({
+        throttlers: [
+          {
+            name: 'global',
+            ttl: 60000,    // 1 minute window
+            limit: 100,    // 100 requests per minute per IP
+          },
+        ],
+        storage: new ThrottlerStorageRedisService(config.get('REDIS_URL')),
+      }),
+      inject: [ConfigService],
+    }),
     BullModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => {
@@ -53,9 +74,13 @@ import { DepartmentsModule } from './departments/departments.module';
     InvitationsModule,
     DepartmentsModule,
   ],
-  controllers: [AppController],
+  controllers: [AppController, InternalController],
   providers: [
     AppService,
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
     {
       provide: APP_GUARD,
       useClass: ClerkGuard,
@@ -64,10 +89,16 @@ import { DepartmentsModule } from './departments/departments.module';
       provide: APP_GUARD,
       useClass: RolesGuard,
     },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: OrgScopeInterceptor,
+    },
   ],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(RequestLoggerMiddleware).forRoutes('*');
+    consumer
+      .apply(RequestLoggerMiddleware, AuditMiddleware)
+      .forRoutes('*');
   }
 }

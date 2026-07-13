@@ -43,6 +43,20 @@ export class DepartmentsService {
     });
   }
 
+  async getDepartmentById(id: string, orgId: string) {
+    const dept = await this.prisma.department.findFirst({
+      where: { id, organizationId: orgId },
+      include: {
+        roleDefinitions: {
+          orderBy: { title: 'asc' }
+        },
+        _count: { select: { users: true } }
+      }
+    });
+    if (!dept) throw new NotFoundException('Department not found');
+    return dept;
+  }
+
   async updateDepartment(
     id: string,
     orgId: string,

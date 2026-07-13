@@ -12,6 +12,7 @@ import { CreateOrgDto } from './dto/create-org.dto';
 import { UpdateOrgDto } from './dto/update-org.dto';
 import { Public } from '../auth/decorators/public.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { OrgId } from '../auth/decorators/org-id.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 import * as Prisma from '@prisma/client';
 
@@ -36,9 +37,13 @@ export class OrganizationsController {
 
   @Get(':id')
   @Roles('MANAGER', 'ORG_ADMIN', 'PLATFORM_ADMIN')
-  async findOne(@Param('id') id: string, @CurrentUser() user: Prisma.User) {
-    // Ensure user belongs to this org
-    if (user.role !== 'PLATFORM_ADMIN' && user.organizationId !== id) {
+  async findOne(
+    @Param('id') id: string, 
+    @CurrentUser() user: Prisma.User,
+    @OrgId() orgId: string
+  ) {
+    // Ensure user belongs to this org, or is PLATFORM_ADMIN
+    if (user.role !== 'PLATFORM_ADMIN' && orgId !== id) {
       throw new ForbiddenException();
     }
     return { success: true, data: await this.service.findById(id) };
@@ -46,8 +51,12 @@ export class OrganizationsController {
 
   @Get(':id/stats')
   @Roles('MANAGER', 'ORG_ADMIN', 'PLATFORM_ADMIN')
-  async getStats(@Param('id') id: string, @CurrentUser() user: Prisma.User) {
-    if (user.role !== 'PLATFORM_ADMIN' && user.organizationId !== id) {
+  async getStats(
+    @Param('id') id: string, 
+    @CurrentUser() user: Prisma.User,
+    @OrgId() orgId: string
+  ) {
+    if (user.role !== 'PLATFORM_ADMIN' && orgId !== id) {
       throw new ForbiddenException();
     }
     return { success: true, data: await this.service.getStats(id) };
@@ -58,9 +67,10 @@ export class OrganizationsController {
   async update(
     @Param('id') id: string,
     @Body() dto: UpdateOrgDto,
-    @CurrentUser() user: Prisma.User
+    @CurrentUser() user: Prisma.User,
+    @OrgId() orgId: string
   ) {
-    if (user.role !== 'PLATFORM_ADMIN' && user.organizationId !== id) {
+    if (user.role !== 'PLATFORM_ADMIN' && orgId !== id) {
       throw new ForbiddenException();
     }
     return { success: true, data: await this.service.updateOrganization(id, dto) };
