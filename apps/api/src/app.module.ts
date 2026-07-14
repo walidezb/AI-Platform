@@ -21,6 +21,7 @@ import { ManagerModule } from './manager/manager.module';
 import { InvitationsModule } from './invitations/invitations.module';
 import { DepartmentsModule } from './departments/departments.module';
 import { AssessmentModule } from './assessment/assessment.module';
+import { PathsModule } from './paths/paths.module';
 
 import { InternalController } from './internal/internal.controller';
 
@@ -75,6 +76,7 @@ import { InternalController } from './internal/internal.controller';
     InvitationsModule,
     DepartmentsModule,
     AssessmentModule,
+    PathsModule,
   ],
   controllers: [AppController, InternalController],
   providers: [
