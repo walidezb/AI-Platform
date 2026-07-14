@@ -22,6 +22,7 @@ import { InvitationsModule } from './invitations/invitations.module';
 import { DepartmentsModule } from './departments/departments.module';
 import { AssessmentModule } from './assessment/assessment.module';
 import { PathsModule } from './paths/paths.module';
+import { UsageModule } from './usage/usage.module';
 
 import { InternalController } from './internal/internal.controller';
 
@@ -77,6 +78,7 @@ import { InternalController } from './internal/internal.controller';
     DepartmentsModule,
     AssessmentModule,
     PathsModule,
+    UsageModule,
   ],
   controllers: [AppController, InternalController],
   providers: [

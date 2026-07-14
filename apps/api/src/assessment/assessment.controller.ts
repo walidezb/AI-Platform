@@ -286,4 +286,54 @@ export class AssessmentController {
       }
     };
   }
+
+  @Get('profile-by-token/:token')
+  @Public()
+  async getProfileByToken(@Param('token') token: string) {
+    // Validate token and get user
+    const user = await this.prisma.user.findFirst({
+      where: {
+        onboardingToken: token,
+        onboardingTokenExpiry: { gte: new Date() },
+      },
+      include: {
+        organization: { select: { name: true, logoUrl: true } }
+      }
+    });
+    if (!user) throw new NotFoundException('Invalid or expired token');
+
+    // Get their completed assessment
+    const assessment = await this.prisma.assessment.findFirst({
+      where: { userId: user.id, status: 'COMPLETED' },
+      orderBy: { completedAt: 'desc' },
+      select: {
+        id: true,
+        identifiedRole: true,
+        experienceLevel: true,
+        strongAreas: true,
+        weakAreas: true,
+        learningGoals: true,
+        completedAt: true,
+        skillProfile: true,
+      }
+    });
+
+    if (!assessment) {
+      return { hasAssessment: false };
+    }
+
+    return {
+      hasAssessment: true,
+      employeeName: user.fullName,
+      orgName: user.organization?.name || 'Company',
+      assessment: {
+        identifiedRole: assessment.identifiedRole,
+        experienceLevel: assessment.experienceLevel,
+        strongAreas: assessment.strongAreas,
+        weakAreas: assessment.weakAreas,
+        learningGoals: assessment.learningGoals,
+        completedAt: assessment.completedAt,
+      }
+    };
+  }
 }

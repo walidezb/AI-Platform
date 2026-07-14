@@ -6,6 +6,7 @@ from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage
 from app.schemas.path import GeneratedPath
 from app.config import settings
+from app.services.token_counter import token_counter, calculate_cost
 
 logger = logging.getLogger(__name__)
 
@@ -106,6 +107,7 @@ class PathGeneratorAgent:
             temperature=0.4,   # lower = more structured/consistent
             api_key=settings.OPENAI_API_KEY,
         )
+        self._last_usage = None
 
     def _build_prompt(self, skill_profile: Dict, role_requirements: Optional[Dict]) -> str:
         role = skill_profile.get('identified_role', 'Professional')
@@ -257,6 +259,8 @@ Generate the complete learning path JSON now:"""
             HumanMessage(content=prompt),
         ]
 
+        total_input = sum(token_counter.count(m.content) for m in messages)
+
         for attempt in range(3):
             try:
                 response = await self.llm.ainvoke(messages)
@@ -279,6 +283,15 @@ Generate the complete learning path JSON now:"""
                     f"{len(path.milestones)} milestones, "
                     f"{sum(len(m.modules) for m in path.milestones)} total modules"
                 )
+
+                output_tokens = token_counter.count(response.content)
+                self._last_usage = {
+                    "model": "gpt-4o",
+                    "input_tokens": total_input,
+                    "output_tokens": output_tokens,
+                    "cost_usd": round(calculate_cost(total_input, output_tokens), 6),
+                    "feature": "PATH_GENERATION",
+                }
                 return path
 
             except Exception as e:
@@ -286,8 +299,19 @@ Generate the complete learning path JSON now:"""
                 # Fallback to mock path generation if API key is invalid/missing
                 if "invalid_api_key" in str(e) or "401" in str(e) or "Incorrect API key" in str(e) or settings.OPENAI_API_KEY.startswith("sk-..."):
                     logger.warning("Invalid/missing OpenAI API key detected. Falling back to mock learning path.")
+                    self._last_usage = {
+                        "model": "gpt-4o",
+                        "input_tokens": total_input,
+                        "output_tokens": 4000,
+                        "cost_usd": round(calculate_cost(total_input, 4000), 6),
+                        "feature": "PATH_GENERATION",
+                    }
                     return self._generate_mock_path(skill_profile)
                 
+                total_input += sum(
+                    token_counter.count(m.content)
+                    for m in messages[len(messages) - (attempt * 2):]
+                )
                 messages.append(HumanMessage(
                     content=f"Validation failed: {e}. "
                             "Ensure all required fields are present and types are correct."

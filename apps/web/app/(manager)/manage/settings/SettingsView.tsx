@@ -1,11 +1,10 @@
 'use client';
 
 import React from 'react';
-import { CreditCard } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { EmptyState } from '@/components/ui/EmptyState';
 import { DepartmentsManager } from '@/components/settings/DepartmentsManager';
 import { OrgSettingsForm } from '@/components/settings/OrgSettingsForm';
+import { BudgetWidget } from '@/components/settings/BudgetWidget';
 
 interface User {
   id: string;
@@ -52,11 +51,7 @@ export function SettingsView({ user }: SettingsViewProps) {
 
         {/* ================= TAB 3: BILLING ================= */}
         <TabsContent value="billing">
-          <EmptyState
-            icon={CreditCard}
-            title="Billing coming soon"
-            description="Usage-based billing configurations and subscription histories will be available here."
-          />
+          <BudgetWidget />
         </TabsContent>
       </Tabs>
     </div>

@@ -5,6 +5,7 @@ from fastapi import APIRouter, HTTPException, BackgroundTasks
 from app.agents.path_generator import PathGeneratorAgent
 from app.agents.resource_curator import ResourceCuratorAgent
 from app.schemas.path import PathGenerationRequest, GeneratedPath
+from app.services.usage_logger import log_usage_to_api
 from app.config import settings
 
 router = APIRouter(prefix="/path", tags=["Path Generation"])
@@ -56,6 +57,19 @@ async def generate_path(
         org_id=request.organizationId,
         path=path,
     )
+
+    # Log AI usage
+    if agent._last_usage:
+        background_tasks.add_task(
+            log_usage_to_api,
+            org_id=request.organizationId,
+            user_id=request.userId,
+            feature=agent._last_usage["feature"],
+            model=agent._last_usage["model"],
+            input_tokens=agent._last_usage["input_tokens"],
+            output_tokens=agent._last_usage["output_tokens"],
+            cost_usd=agent._last_usage["cost_usd"],
+        )
 
     return {
         "success": True,

@@ -3,12 +3,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, User, Send, Loader2, CheckCircle } from 'lucide-react';
+import { Sparkles, User, Send, Loader2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { Logo } from '@/components/ui/Logo';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card } from '@/components/ui/card';
 import { toast } from 'sonner';
 
 interface ChatMessage {
@@ -205,9 +204,18 @@ export function ChatInterface({ token }: ChatInterfaceProps) {
     handleSend();
   };
 
-  const goToPathPage = () => {
-    router.push(`/onboarding/${token}/path-ready`);
-  };
+  const goToCompletionPage = React.useCallback(() => {
+    router.push(`/onboarding/${token}/assessment-complete`);
+  }, [router, token]);
+
+  useEffect(() => {
+    if (isComplete) {
+      const timer = setTimeout(() => {
+        goToCompletionPage();
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [isComplete, goToCompletionPage]);
 
   if (isInitializing) {
     return (
@@ -348,59 +356,25 @@ export function ChatInterface({ token }: ChatInterfaceProps) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm z-50 p-4"
+            className="fixed inset-0 bg-slate-950/90 backdrop-blur-sm z-50 flex items-center justify-center"
           >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              transition={{ type: 'spring', duration: 0.5 }}
-              className="max-w-md w-full"
-            >
-              <Card className="bg-slate-900/90 border-slate-800 backdrop-blur-md p-8 text-center shadow-2xl relative overflow-hidden">
-                <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-emerald-500 to-teal-500" />
-                
-                {/* Animated checkmark */}
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ type: 'spring', stiffness: 200, delay: 0.2 }}
-                  className="h-20 w-20 rounded-full bg-emerald-500/10 border-2 border-emerald-500/30 flex items-center justify-center mx-auto mb-6"
-                >
-                  <CheckCircle className="h-10 w-10 text-emerald-400" />
-                </motion.div>
-
-                <h2 className="font-heading text-2xl font-bold text-white mb-2">
-                  Assessment Complete! 🎉
-                </h2>
-                <p className="text-sm text-slate-400 mb-6 leading-relaxed">
-                  Your AI-powered learning path is being generated.
-                  This takes about 30 seconds.
-                </p>
-
-                {/* Animated progress dots */}
-                <div className="flex justify-center gap-2 mb-8">
-                  {[0, 1, 2].map((i) => (
-                    <div
-                      key={i}
-                      className="h-2.5 w-2.5 rounded-full bg-indigo-500 animate-bounce"
-                      style={{ animationDelay: `${i * 0.15}s` }}
-                    />
-                  ))}
-                </div>
-
-                <Button
-                  onClick={goToPathPage}
-                  className="w-full bg-gradient-to-r from-indigo-500 to-violet-500 hover:from-indigo-600 hover:to-violet-600 shadow-lg text-white"
-                  size="lg"
-                >
-                  View My Learning Path →
-                </Button>
-                <p className="text-xs text-slate-500 mt-4 tracking-wide font-light">
-                  Your path will be ready in a few moments
-                </p>
-              </Card>
-            </motion.div>
+            <div className="text-center space-y-4">
+              <div className="flex justify-center gap-2">
+                {[0, 1, 2].map((i) => (
+                  <div
+                    key={i}
+                    className="h-3 w-3 rounded-full bg-indigo-500 animate-bounce"
+                    style={{ animationDelay: `${i * 0.15}s` }}
+                  />
+                ))}
+              </div>
+              <p className="font-heading text-xl font-semibold text-white">
+                Analyzing your results...
+              </p>
+              <p className="text-slate-400 text-sm">
+                Preparing your skill profile
+              </p>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

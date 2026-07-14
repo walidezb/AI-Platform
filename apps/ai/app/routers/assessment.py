@@ -8,6 +8,7 @@ from app.schemas.assessment import (
 )
 from app.agents.assessment_agent import AssessmentAgent
 from app.services.redis_service import redis_service
+from app.services.usage_logger import log_usage_to_api
 from app.config import settings
 
 router = APIRouter(prefix="/assessment", tags=["Assessment"])
@@ -114,6 +115,19 @@ async def send_message(
     except Exception as e:
         logger.error(f"LLM call failed: {e}")
         raise HTTPException(500, "AI service error. Please try again.")
+
+    # Log AI usage
+    if agent.last_usage:
+        background_tasks.add_task(
+            log_usage_to_api,
+            org_id=session.organizationId,
+            user_id=session.userId,
+            feature=agent.last_usage["feature"],
+            model=agent.last_usage["model"],
+            input_tokens=agent.last_usage["input_tokens"],
+            output_tokens=agent.last_usage["output_tokens"],
+            cost_usd=agent.last_usage["cost_usd"],
+        )
 
     # Check if assessment is complete
     is_complete = agent.is_complete(ai_response)
@@ -222,6 +236,19 @@ async def send_message_stream(
 
             # Full response assembled
             full_response = "".join(full_response_parts)
+
+            # Log AI usage
+            if agent.last_usage:
+                background_tasks.add_task(
+                    log_usage_to_api,
+                    org_id=session.organizationId,
+                    user_id=session.userId,
+                    feature=agent.last_usage["feature"],
+                    model=agent.last_usage["model"],
+                    input_tokens=agent.last_usage["input_tokens"],
+                    output_tokens=agent.last_usage["output_tokens"],
+                    cost_usd=agent.last_usage["cost_usd"],
+                )
             is_complete = agent.is_complete(full_response)
             skill_profile = None
             display_message = full_response

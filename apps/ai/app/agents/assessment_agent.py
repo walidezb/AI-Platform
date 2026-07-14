@@ -6,6 +6,7 @@ from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from app.schemas.assessment import SkillProfile, AssessmentSession
 from app.config import settings
+from app.services.token_counter import token_counter, calculate_cost
 
 logger = logging.getLogger(__name__)
 
@@ -119,6 +120,7 @@ class AssessmentAgent:
             streaming=True,
         )
         self.language = language
+        self.last_usage = None
         self.system_prompt = (
             ASSESSMENT_SYSTEM_PROMPT_AR
             if language == "AR"
@@ -184,7 +186,20 @@ EMPLOYEE CONTEXT:
     ) -> str:
         """Get the AI's response to the latest user message."""
         messages = self._build_messages(conversation_history, context)
-        response = await self.llm.ainvoke(messages)
+        input_tokens = sum(token_counter.count(m.content) for m in messages)
+        response = await self.llm.ainvoke(
+            messages,
+            config={"callbacks": []},
+        )
+        output_tokens = token_counter.count(response.content)
+        cost_usd = calculate_cost(input_tokens, output_tokens)
+        self.last_usage = {
+            "model": "gpt-4o",
+            "input_tokens": input_tokens,
+            "output_tokens": output_tokens,
+            "cost_usd": round(cost_usd, 6),
+            "feature": "ASSESSMENT",
+        }
         return response.content
 
     async def stream_next_message(
@@ -194,9 +209,21 @@ EMPLOYEE CONTEXT:
     ) -> AsyncIterator[str]:
         """Stream the AI's response token by token."""
         messages = self._build_messages(conversation_history, context)
+        input_tokens = sum(token_counter.count(m.content) for m in messages)
+        streamed_content = ""
         async for chunk in self.llm.astream(messages):
             if chunk.content:
+                streamed_content += chunk.content
                 yield chunk.content
+        output_tokens = token_counter.count(streamed_content)
+        cost_usd = calculate_cost(input_tokens, output_tokens)
+        self.last_usage = {
+            "model": "gpt-4o",
+            "input_tokens": input_tokens,
+            "output_tokens": output_tokens,
+            "cost_usd": round(cost_usd, 6),
+            "feature": "ASSESSMENT",
+        }
 
     def is_complete(self, response: str) -> bool:
         """Check if the assessment is marked as complete."""
