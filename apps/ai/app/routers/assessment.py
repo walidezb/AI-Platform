@@ -166,6 +166,120 @@ async def send_message(
         turnCount=session.turnCount,
     )
 
+# ── POST /assessment/{id}/message/stream ──────────────────────────────────────
+
+from fastapi.responses import StreamingResponse
+
+@router.post("/{assessment_id}/message/stream")
+async def send_message_stream(
+    assessment_id: str,
+    request: SendMessageRequest,
+    background_tasks: BackgroundTasks,
+):
+    """
+    Stream the AI response token by token using Server-Sent Events.
+    Client receives a stream of data: events.
+    """
+
+    # Get session
+    session = await redis_service.get_session(assessment_id)
+    if not session:
+        raise HTTPException(404, "Assessment session not found or expired")
+    if session.status == "completed":
+        raise HTTPException(400, "Assessment already completed")
+
+    # Add user message to history
+    session.conversationHistory.append({
+        "role": "user",
+        "content": request.userMessage,
+    })
+    session.turnCount += 1
+
+    agent = AssessmentAgent(language=session.language)
+    context = {
+        "jobTitle": session.jobTitle,
+        "department": session.department,
+        "language": session.language,
+    }
+
+    # Collect full response for post-processing
+    full_response_parts = []
+
+    async def generate():
+        nonlocal full_response_parts
+
+        try:
+            # Stream tokens
+            async for token in agent.stream_next_message(
+                session.conversationHistory,
+                context,
+            ):
+                full_response_parts.append(token)
+
+                # Send token as SSE event
+                import json as _json
+                yield f"data: {_json.dumps({'token': token, 'type': 'token'})}\n\n"
+
+            # Full response assembled
+            full_response = "".join(full_response_parts)
+            is_complete = agent.is_complete(full_response)
+            skill_profile = None
+            display_message = full_response
+
+            if is_complete:
+                display_message = agent.extract_closing_message(full_response)
+
+                # Parse skill profile
+                skill_profile = agent.parse_skill_profile(full_response)
+                if not skill_profile:
+                    skill_profile = await agent.retry_get_profile(
+                        session.conversationHistory, context
+                    )
+
+                if skill_profile:
+                    session.status = "completed"
+                    # Send completion event with profile
+                    yield f"data: {_json.dumps({'type': 'complete', 'skillProfile': skill_profile.model_dump()})}\n\n"
+
+                    # Notify NestJS in background
+                    background_tasks.add_task(
+                        notify_assessment_complete,
+                        assessment_id=assessment_id,
+                        user_id=session.userId,
+                        org_id=session.organizationId,
+                        skill_profile=skill_profile.model_dump(),
+                        conversation_history=session.conversationHistory,
+                    )
+                else:
+                    # Parsing failed — don't mark complete
+                    is_complete = False
+                    yield f"data: {_json.dumps({'type': 'error', 'message': 'Profile parsing failed'})}\n\n"
+
+            # Save updated session (use display message without JSON blob)
+            session.conversationHistory.append({
+                "role": "assistant",
+                "content": display_message,
+            })
+            await redis_service.update_session(session)
+
+            # Send done event
+            yield f"data: {_json.dumps({'type': 'done', 'isComplete': is_complete, 'turnCount': session.turnCount})}\n\n"
+
+        except Exception as e:
+            logger.error(f"Streaming error for {assessment_id}: {e}")
+            yield f"data: {_json.dumps({'type': 'error', 'message': 'AI service error'})}\n\n"
+
+    return StreamingResponse(
+        generate(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",  # important for nginx
+        },
+    )
+
+
 # ── GET /assessment/{id}/status ────────────────────────────────────────────────
 
 @router.get("/{assessment_id}/status")

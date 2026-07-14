@@ -20,6 +20,7 @@ import { OrganizationsModule } from './organizations/organizations.module';
 import { ManagerModule } from './manager/manager.module';
 import { InvitationsModule } from './invitations/invitations.module';
 import { DepartmentsModule } from './departments/departments.module';
+import { AssessmentModule } from './assessment/assessment.module';
 
 import { InternalController } from './internal/internal.controller';
 
@@ -73,6 +74,7 @@ import { InternalController } from './internal/internal.controller';
     ManagerModule,
     InvitationsModule,
     DepartmentsModule,
+    AssessmentModule,
   ],
   controllers: [AppController, InternalController],
   providers: [

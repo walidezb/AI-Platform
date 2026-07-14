@@ -1,34 +1,33 @@
-'use client';
+import { notFound } from 'next/navigation';
+import { ChatInterface } from '@/components/assessment/ChatInterface';
 
-import React from 'react';
-import { Card } from '@/components/ui/card';
-import { OnboardingSteps } from '@/components/onboarding/OnboardingSteps';
+async function getOnboardingUser(token: string) {
+  const apiUrl = process.env.API_URL || 'http://localhost:3001';
+  const res = await fetch(`${apiUrl}/invitations/validate/${token}`, {
+    method: 'GET',
+    cache: 'no-store',
+  });
+  if (!res.ok) return null;
+  const result = await res.json();
+  return result.success ? result.data : null;
+}
 
-export default function AssessmentPlaceholderPage() {
-  return (
-    <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center px-4 py-12 relative overflow-hidden">
-      {/* Background radial overlays */}
-      <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-primary/10 rounded-full blur-3xl" />
-      <div className="absolute bottom-1/4 right-1/4 w-72 h-72 bg-emerald-500/5 rounded-full blur-3xl" />
+export async function generateMetadata() {
+  return {
+    title: 'AI Skills Assessment | LearnPath',
+    description: 'Conversational skills assessment to customize your learning journey.',
+    robots: {
+      index: false,
+      follow: false,
+    },
+  };
+}
 
-      <Card className="max-w-md w-full bg-slate-900/40 border-slate-800 backdrop-blur-md shadow-2xl p-8 flex flex-col items-center gap-6 relative z-10">
-        
-        {/* Pulsing bot status */}
-        <div className="text-6xl animate-pulse select-none">🤖</div>
-
-        <div className="text-center space-y-2">
-          <h2 className="text-2xl font-bold font-heading text-white tracking-tight">AI Skills Assessment</h2>
-          <p className="text-xs text-slate-400 max-w-sm mx-auto leading-relaxed">
-            In Step 2.5, we will build the interactive cognitive test and questionnaire module.
-          </p>
-        </div>
-
-        <div className="w-full h-px bg-slate-800 my-2" />
-
-        <div className="w-full">
-          <OnboardingSteps currentStep={1} />
-        </div>
-      </Card>
-    </div>
-  );
+export default async function AssessmentPage(props: { params: Promise<{ token: string }> }) {
+  const { token } = await props.params;
+  const user = await getOnboardingUser(token);
+  if (!user) {
+    notFound();
+  }
+  return <ChatInterface token={token} user={user} />;
 }
