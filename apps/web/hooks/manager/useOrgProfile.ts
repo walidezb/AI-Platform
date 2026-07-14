@@ -47,7 +47,7 @@ export function useUpdateOrg(orgId: string) {
       defaultLanguage?: 'EN' | 'AR';
     }) => {
       const client = createApiClient(getToken);
-      return client.patch<{ success: boolean; data: any }>(`/orgs/${orgId}`, data);
+      return client.patch<{ success: boolean; data: unknown }>(`/orgs/${orgId}`, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['org-profile', orgId] });

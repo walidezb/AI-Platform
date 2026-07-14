@@ -36,6 +36,7 @@ export function Sidebar({ items, org, user }: SidebarProps) {
       {/* Sidebar header (top, above nav) */}
       <div className="flex h-16 items-center gap-3 px-4 py-3 border-b border-border">
         {org.logoUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
           <img
             src={org.logoUrl}
             alt={org.name}

@@ -170,6 +170,7 @@ export function OrgSettingsForm({ orgId }: OrgSettingsFormProps) {
               {/* LOGO AREA */}
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 p-4 rounded-xl border border-slate-900 bg-slate-950/40">
                 {debouncedLogoUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={debouncedLogoUrl}
                     alt="Company Logo Preview"
