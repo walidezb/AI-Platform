@@ -39,6 +39,7 @@ export function useInvitations() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['invitations'] });
+      queryClient.invalidateQueries({ queryKey: ['invitation-stats'] });
       queryClient.invalidateQueries({ queryKey: ['org-stats'] });
       queryClient.invalidateQueries({ queryKey: ['recent-activity'] });
     },
@@ -51,6 +52,7 @@ export function useInvitations() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['invitations'] });
+      queryClient.invalidateQueries({ queryKey: ['invitation-stats'] });
       queryClient.invalidateQueries({ queryKey: ['org-stats'] });
       queryClient.invalidateQueries({ queryKey: ['recent-activity'] });
     },
@@ -98,6 +100,7 @@ export function useInvitations() {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['invitations'] });
+      queryClient.invalidateQueries({ queryKey: ['invitation-stats'] });
       queryClient.invalidateQueries({ queryKey: ['org-stats'] });
       queryClient.invalidateQueries({ queryKey: ['recent-activity'] });
     },
@@ -118,4 +121,26 @@ export function useInvitations() {
     revokeInvite: revokeMutation.mutateAsync,
     isRevoking: revokeMutation.isPending,
   };
+}
+
+export interface InvitationStats {
+  total: number;
+  pending: number;
+  inProgress: number;
+  accepted: number;
+  revoked: number;
+  expired: number;
+}
+
+export function useInvitationStats() {
+  const { getToken } = useAuth();
+  return useQuery({
+    queryKey: ['invitation-stats'],
+    queryFn: async () => {
+      const client = createApiClient(getToken);
+      const res = await client.get<{ success: boolean; data: InvitationStats }>('/invitations/stats');
+      return res.data;
+    },
+    refetchInterval: 30 * 1000,
+  });
 }

@@ -1,23 +1,25 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
-import { useInvitations, Invitation } from '@/hooks/manager/useInvitations';
+import { useInvitations, useInvitationStats, Invitation } from '@/hooks/manager/useInvitations';
 import { useDepartments } from '@/hooks/manager/useDepartments';
 import { copyToClipboard } from '@/lib/clipboard';
 import { timeAgo } from '@/lib/utils/date';
 import { cn } from '@/lib/utils';
 import Papa from 'papaparse';
 import { toast } from 'sonner';
+import { ShareLinkDialog } from '@/components/invitations/ShareLinkDialog';
+import { AnimatedNumber } from '@/components/ui/AnimatedNumber';
 
 import { 
   Mail, 
   Send, 
   Trash2, 
-  Link2, 
   Download, 
   Upload, 
   Search, 
-  Loader2 
+  Loader2,
+  Share2
 } from 'lucide-react';
 
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -106,8 +108,34 @@ export default function InvitationsPage() {
   // Revoke Dialog Target
   const [revokeTarget, setRevokeTarget] = useState<Invitation | null>(null);
 
-  // Copy Tooltip Tracker
-  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+
+  // Invitation Stats & Share Modal
+  const { data: stats } = useInvitationStats();
+  const [isShareOpen, setIsShareOpen] = useState(false);
+  const [shareTarget, setShareTarget] = useState<Invitation | null>(null);
+
+  const openShareDialog = (emp: Invitation) => {
+    setShareTarget(emp);
+    setIsShareOpen(true);
+  };
+
+  const handleShareResend = async () => {
+    if (!shareTarget) return;
+    try {
+      await resendInvite(shareTarget.id);
+      toast.success(`Re-sent invitation email successfully to ${shareTarget.fullName}`);
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Failed to resend invitation';
+      toast.error(errorMsg);
+    }
+  };
+
+  const getShareLink = (inv: Invitation) => {
+    if (!inv.onboardingToken) return '';
+    const appUrl = window.location.origin;
+    return `${appUrl}/onboarding/${inv.onboardingToken}`;
+  };
 
   // Fetch departments and roles using the custom hook
   const { departments, roles } = useDepartments();
@@ -135,8 +163,6 @@ export default function InvitationsPage() {
   });
 
   const pendingCount = activeInvitations.filter(i => i.computedStatus === 'pending' || i.computedStatus === 'in-progress').length;
-  const acceptedCount = activeInvitations.filter(i => i.computedStatus === 'accepted').length;
-  const revokedCount = activeInvitations.filter(i => i.computedStatus === 'revoked').length;
 
   const filteredInvitations = activeInvitations.filter(inv => {
     const search = searchTerm.toLowerCase().trim();
@@ -270,19 +296,7 @@ export default function InvitationsPage() {
     }
   };
 
-  const handleCopyLink = async (inv: Invitation) => {
-    if (!inv.onboardingToken) return;
-    const appUrl = window.location.origin;
-    const link = `${appUrl}/onboarding/${inv.onboardingToken}`;
-    const success = await copyToClipboard(link);
-    if (success) {
-      setCopiedId(inv.id);
-      toast.success('Invitation link copied to clipboard!');
-      setTimeout(() => setCopiedId(null), 2000);
-    } else {
-      toast.error('Failed to copy link');
-    }
-  };
+
 
   const handleResend = async (inv: Invitation) => {
     try {
@@ -534,27 +548,21 @@ export default function InvitationsPage() {
         <TabsContent value="manage-invitations" className="space-y-6">
           
           {/* Stats Row */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-            <Card className="bg-card border-border">
-              <CardContent className="p-6">
-                <p className="text-muted-foreground text-xs font-semibold uppercase tracking-wider">Pending Invitees</p>
-                <h3 className="font-heading text-3xl font-bold text-white mt-2">{pendingCount}</h3>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-card border-border">
-              <CardContent className="p-6">
-                <p className="text-muted-foreground text-xs font-semibold uppercase tracking-wider">Accepted Invites</p>
-                <h3 className="font-heading text-3xl font-bold text-white mt-2">{acceptedCount}</h3>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-card border-border">
-              <CardContent className="p-6">
-                <p className="text-muted-foreground text-xs font-semibold uppercase tracking-wider">Revoked Invites</p>
-                <h3 className="font-heading text-3xl font-bold text-white mt-2">{revokedCount}</h3>
-              </CardContent>
-            </Card>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
+            {[
+              { label: 'Total',       value: stats?.total ?? 0,      color: 'text-foreground' },
+              { label: 'Pending',     value: stats?.pending ?? 0,    color: 'text-yellow-400' },
+              { label: 'In Progress', value: stats?.inProgress ?? 0, color: 'text-blue-400' },
+              { label: 'Accepted',    value: stats?.accepted ?? 0,   color: 'text-emerald-400' },
+              { label: 'Revoked',     value: stats?.revoked ?? 0,    color: 'text-muted-foreground' },
+            ].map(stat => (
+              <Card key={stat.label} className="p-3 text-center bg-card border-border">
+                <p className={`text-2xl font-bold font-heading ${stat.color}`}>
+                  <AnimatedNumber value={stat.value} />
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">{stat.label}</p>
+              </Card>
+            ))}
           </div>
 
           {/* Search/Filter Container */}
@@ -591,6 +599,7 @@ export default function InvitationsPage() {
                       <TableHead className="text-xs font-semibold text-slate-300">Department</TableHead>
                       <TableHead className="text-xs font-semibold text-slate-300">Job Title</TableHead>
                       <TableHead className="text-xs font-semibold text-slate-300">Status</TableHead>
+                      <TableHead className="text-xs font-semibold text-slate-300">Invite Link</TableHead>
                       <TableHead className="text-xs font-semibold text-slate-300">Invited</TableHead>
                       <TableHead className="text-xs font-semibold text-slate-300 text-right">Actions</TableHead>
                     </TableRow>
@@ -609,30 +618,26 @@ export default function InvitationsPage() {
                         <TableCell>
                           <StatusBadge status={inv.computedStatus} className="scale-90" />
                         </TableCell>
+                        <TableCell className="font-mono text-[10px] text-slate-400 truncate max-w-[120px] select-all">
+                          {inv.onboardingToken ? `/onboarding/${inv.onboardingToken.substring(0, 8)}...` : '-'}
+                        </TableCell>
                         <TableCell className="text-slate-400 text-xs select-none">
                           {timeAgo(inv.createdAt)}
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="inline-flex items-center gap-1.5">
                             
-                            {/* Copy Link Button */}
-                            {inv.computedStatus !== 'accepted' && inv.computedStatus !== 'revoked' && (
-                              <Tooltip>
-                                <TooltipTrigger>
-                                  <Button 
-                                    variant="ghost" 
-                                    size="icon" 
-                                    onClick={() => handleCopyLink(inv)} 
-                                    className="h-8 w-8 hover:bg-slate-900 text-slate-400 hover:text-white"
-                                  >
-                                    <Link2 className="h-4 w-4 shrink-0" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent className="bg-slate-950 border border-slate-800 text-[10px] text-white font-semibold">
-                                  {copiedId === inv.id ? 'Copied!' : 'Copy Link'}
-                                </TooltipContent>
-                              </Tooltip>
-                            )}
+                            {/* Share Button */}
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => openShareDialog(inv)}
+                              disabled={!inv.onboardingToken || inv.invitationStatus === 'ACCEPTED'}
+                              className="h-8 hover:bg-slate-900 text-xs font-semibold text-primary hover:text-white disabled:opacity-40"
+                            >
+                              <Share2 className="h-3.5 w-3.5 mr-1.5 shrink-0" />
+                              Share
+                            </Button>
 
                             {/* Resend Button */}
                             <Tooltip>
@@ -700,6 +705,15 @@ export default function InvitationsPage() {
 
         </TabsContent>
       </Tabs>
+      {shareTarget && (
+        <ShareLinkDialog
+          isOpen={isShareOpen}
+          onOpenChange={setIsShareOpen}
+          employeeName={shareTarget.fullName}
+          inviteLink={getShareLink(shareTarget)}
+          onResendEmail={handleShareResend}
+        />
+      )}
     </div>
   );
 }

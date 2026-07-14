@@ -124,7 +124,7 @@ export class InvitationsService {
         onboardingTokenExpiry: { gte: new Date() },
       },
       include: {
-        organization: { select: { name: true, logoUrl: true } },
+        organization: { select: { name: true, logoUrl: true, industry: true } },
         department: { select: { name: true } },
       }
     });
@@ -145,6 +145,8 @@ export class InvitationsService {
       department: user.department?.name,
       orgName: user.organization.name,
       orgLogo: user.organization.logoUrl,
+      orgIndustry: user.organization.industry,
+      isReturning: user.invitationStatus === 'IN_PROGRESS',
     };
   }
 
@@ -196,5 +198,44 @@ export class InvitationsService {
     });
     if (!user?.onboardingToken) throw new NotFoundException('No active invite link');
     return this.buildInviteUrl(user.onboardingToken);
+  }
+
+  async markTokenOpened(token: string) {
+    const user = await this.prisma.user.findFirst({
+      where: {
+        onboardingToken: token,
+        onboardingTokenExpiry: { gte: new Date() },
+      }
+    });
+    if (!user) return null;
+
+    if (user.invitationStatus === 'PENDING') {
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: { invitationStatus: 'IN_PROGRESS' }
+      });
+    }
+    return user;
+  }
+
+  async getInvitationStats(orgId: string) {
+    const [total, pending, inProgress, accepted, revoked] = await Promise.all([
+      this.prisma.user.count({ where: { organizationId: orgId, role: 'LEARNER' } }),
+      this.prisma.user.count({ where: { organizationId: orgId, role: 'LEARNER', invitationStatus: 'PENDING' } }),
+      this.prisma.user.count({ where: { organizationId: orgId, role: 'LEARNER', invitationStatus: 'IN_PROGRESS' } }),
+      this.prisma.user.count({ where: { organizationId: orgId, role: 'LEARNER', invitationStatus: 'ACCEPTED' } }),
+      this.prisma.user.count({ where: { organizationId: orgId, role: 'LEARNER', invitationStatus: 'REVOKED' } }),
+    ]);
+
+    const expired = await this.prisma.user.count({
+      where: {
+        organizationId: orgId,
+        role: 'LEARNER',
+        invitationStatus: 'PENDING',
+        onboardingTokenExpiry: { lt: new Date() },
+      }
+    });
+
+    return { total, pending, inProgress, accepted, revoked, expired };
   }
 }

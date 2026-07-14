@@ -50,6 +50,23 @@ export class InvitationsController {
     return { success: true, data: result };
   }
 
+  @Post('validate/:token/open')
+  @Public()
+  async markOpened(@Param('token') token: string) {
+    const user = await this.service.markTokenOpened(token);
+    if (!user) return { success: false };
+    return { success: true };
+  }
+
+  @Get('stats')
+  @Roles('MANAGER', 'ORG_ADMIN')
+  async getStats(@OrgId() orgId: string) {
+    return {
+      success: true,
+      data: await this.service.getInvitationStats(orgId)
+    };
+  }
+
   @Get(':userId/link')
   @Roles('MANAGER', 'ORG_ADMIN')
   async getLink(
