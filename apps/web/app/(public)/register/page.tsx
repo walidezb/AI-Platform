@@ -196,7 +196,7 @@ function RegisterPageContent() {
   ];
 
   return (
-    <div className="flex min-h-screen bg-slate-950 text-slate-100">
+    <div className="flex min-h-screen bg-background text-foreground">
       
       {/* LEFT AREA: Stepper + Form containing (55% width) */}
       <div className="w-full lg:w-[55%] flex flex-col justify-center py-12 px-6 sm:px-12 lg:px-16 relative z-10">
@@ -232,13 +232,13 @@ function RegisterPageContent() {
                   className="space-y-5"
                 >
                   <div className="space-y-1.5">
-                    <Label htmlFor="companyName" className="text-xs font-semibold text-slate-300">
+                    <Label htmlFor="companyName" className="text-xs font-semibold text-muted-foreground">
                       Company Name
                     </Label>
                     <Input
                       id="companyName"
                       placeholder="e.g. Acme Corporation"
-                      className="bg-slate-950/40 border-slate-800 focus-visible:ring-primary text-white"
+                      className="bg-card border-border focus-visible:ring-primary text-foreground"
                       {...register('companyName')}
                     />
                     {errors.companyName && (
@@ -247,17 +247,17 @@ function RegisterPageContent() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label htmlFor="slug" className="text-xs font-semibold text-slate-300">
+                    <Label htmlFor="slug" className="text-xs font-semibold text-muted-foreground">
                       Workspace URL
                     </Label>
                     <div className="relative flex items-center">
-                      <span className="absolute left-3 text-slate-500 text-sm select-none">
+                      <span className="absolute left-3 text-muted-foreground text-sm select-none">
                         ezlearn.app/
                       </span>
                       <Input
                         id="slug"
                         placeholder="acme-corp"
-                        className="pl-[84px] bg-slate-950/40 border-slate-800 focus-visible:ring-primary text-white"
+                        className="pl-[84px] bg-card border-border focus-visible:ring-primary text-foreground"
                         {...register('slug')}
                       />
                     </div>
@@ -287,23 +287,23 @@ function RegisterPageContent() {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <Label htmlFor="industry" className="text-xs font-semibold text-slate-300">
+                      <Label htmlFor="industry" className="text-xs font-semibold text-muted-foreground">
                         Industry
                       </Label>
                       <select
                         id="industry"
-                        className="flex h-9 w-full rounded-md border border-slate-800 bg-slate-950/40 px-3 py-1.5 text-xs text-white focus:outline-hidden focus:ring-1 focus:ring-primary focus:border-primary cursor-pointer"
+                        className="flex h-9 w-full rounded-md border border-border bg-card px-3 py-1.5 text-xs text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary focus:border-primary cursor-pointer"
                         {...register('industry')}
                       >
-                        <option value="" disabled className="bg-slate-950">Select...</option>
-                        <option value="Technology" className="bg-slate-950">Technology</option>
-                        <option value="Finance" className="bg-slate-950">Finance</option>
-                        <option value="Healthcare" className="bg-slate-950">Healthcare</option>
-                        <option value="Retail" className="bg-slate-950">Retail</option>
-                        <option value="Education" className="bg-slate-950">Education</option>
-                        <option value="Manufacturing" className="bg-slate-950">Manufacturing</option>
-                        <option value="Consulting" className="bg-slate-950">Consulting</option>
-                        <option value="Other" className="bg-slate-950">Other</option>
+                        <option value="" disabled className="bg-card">Select...</option>
+                        <option value="Technology" className="bg-card">Technology</option>
+                        <option value="Finance" className="bg-card">Finance</option>
+                        <option value="Healthcare" className="bg-card">Healthcare</option>
+                        <option value="Retail" className="bg-card">Retail</option>
+                        <option value="Education" className="bg-card">Education</option>
+                        <option value="Manufacturing" className="bg-card">Manufacturing</option>
+                        <option value="Consulting" className="bg-card">Consulting</option>
+                        <option value="Other" className="bg-card">Other</option>
                       </select>
                       {errors.industry && (
                         <p className="text-destructive text-xs mt-1">{errors.industry.message}</p>
@@ -311,20 +311,20 @@ function RegisterPageContent() {
                     </div>
 
                     <div className="space-y-1.5">
-                      <Label htmlFor="companySize" className="text-xs font-semibold text-slate-300">
+                      <Label htmlFor="companySize" className="text-xs font-semibold text-muted-foreground">
                         Company Size
                       </Label>
                       <select
                         id="companySize"
-                        className="flex h-9 w-full rounded-md border border-slate-800 bg-slate-950/40 px-3 py-1.5 text-xs text-white focus:outline-hidden focus:ring-1 focus:ring-primary focus:border-primary cursor-pointer"
+                        className="flex h-9 w-full rounded-md border border-border bg-card px-3 py-1.5 text-xs text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary focus:border-primary cursor-pointer"
                         {...register('companySize')}
                       >
-                        <option value="" disabled className="bg-slate-950">Select...</option>
-                        <option value="1-10" className="bg-slate-950">1-10 employees</option>
-                        <option value="11-50" className="bg-slate-950">11-50 employees</option>
-                        <option value="51-200" className="bg-slate-950">51-200 employees</option>
-                        <option value="201-500" className="bg-slate-950">201-500 employees</option>
-                        <option value="500+" className="bg-slate-950">500+ employees</option>
+                        <option value="" disabled className="bg-card">Select...</option>
+                        <option value="1-10" className="bg-card">1-10 employees</option>
+                        <option value="11-50" className="bg-card">11-50 employees</option>
+                        <option value="51-200" className="bg-card">51-200 employees</option>
+                        <option value="201-500" className="bg-card">201-500 employees</option>
+                        <option value="500+" className="bg-card">500+ employees</option>
                       </select>
                       {errors.companySize && (
                         <p className="text-destructive text-xs mt-1">{errors.companySize.message}</p>
@@ -351,15 +351,16 @@ function RegisterPageContent() {
                   className="space-y-5 flex flex-col items-center justify-center"
                 >
                   <div className="text-center space-y-1 mb-2">
-                    <h3 className="font-heading text-sm font-semibold text-white">Create Admin Account</h3>
+                    <h3 className="font-heading text-sm font-semibold text-foreground">Create Admin Account</h3>
                     <p className="text-muted-foreground text-xs">
                       Set up your secure credentials to manage employees and pathways.
                     </p>
                   </div>
                   
                   {/* Embedded Clerk widget */}
-                  <div className="w-full flex justify-center bg-slate-950/40 p-4 rounded-xl border border-slate-900/60">
+                  <div className="w-full flex justify-center bg-card/40 p-4 rounded-xl border border-border/60">
                     <SignUp
+                      routing="hash"
                       signInUrl="/sign-in"
                       fallbackRedirectUrl="/register?step=3"
                       forceRedirectUrl="/register?step=3"
@@ -370,7 +371,7 @@ function RegisterPageContent() {
                     variant="ghost" 
                     size="sm" 
                     onClick={() => router.push('/register?step=1')}
-                    className="text-xs text-muted-foreground hover:text-white"
+                    className="text-xs text-muted-foreground hover:text-foreground"
                   >
                     ← Back to company details
                   </Button>
@@ -388,7 +389,7 @@ function RegisterPageContent() {
                     <div className="space-y-4 py-8 flex flex-col items-center">
                       <Loader2 className="h-10 w-10 text-primary animate-spin" />
                       <div>
-                        <h4 className="text-sm font-semibold text-white">Syncing Workspace Configurations</h4>
+                        <h4 className="text-sm font-semibold text-foreground">Syncing Workspace Configurations</h4>
                         <p className="text-xs text-muted-foreground mt-1">
                           Setting up databases and indexing search tools...
                         </p>
@@ -402,7 +403,7 @@ function RegisterPageContent() {
                         <X className="h-6 w-6" />
                       </div>
                       <div>
-                        <h4 className="text-sm font-bold text-white">Setup Encountered an Issue</h4>
+                        <h4 className="text-sm font-bold text-foreground">Setup Encountered an Issue</h4>
                         <p className="text-xs text-destructive mt-1 max-w-xs mx-auto">
                           {errorMessage}
                         </p>
@@ -421,14 +422,14 @@ function RegisterPageContent() {
                       </div>
 
                       <div className="space-y-2">
-                        <h3 className="text-xl font-bold text-white font-heading">
+                        <h3 className="text-xl font-bold text-foreground font-heading">
                           🎉 Workspace is Ready!
                         </h3>
                         <p className="text-muted-foreground text-xs max-w-sm mx-auto leading-relaxed">
                           Welcome to EZ LEARN. Your enterprise portal is now live and fully indexed.
                         </p>
                         {createdOrgSlug && (
-                          <Badge variant="secondary" className="text-[10px] py-1 font-mono tracking-tight bg-slate-900 border border-slate-800">
+                          <Badge variant="secondary" className="text-[10px] py-1 font-mono tracking-tight bg-muted border border-border text-foreground">
                             ezlearn.app/{createdOrgSlug}
                           </Badge>
                         )}
@@ -436,32 +437,32 @@ function RegisterPageContent() {
 
                       {/* Onboarding steps grid */}
                       <div className="grid grid-cols-1 gap-3 text-left max-w-sm mx-auto">
-                        <div className="flex items-center gap-3 p-3 rounded-lg bg-slate-950/60 border border-slate-900">
+                        <div className="flex items-center gap-3 p-3 rounded-lg bg-card border border-border">
                           <div className="h-8 w-8 rounded bg-primary/10 border border-primary/20 flex items-center justify-center text-primary text-xs font-bold">
                             👥
                           </div>
                           <div>
-                            <div className="text-xs font-semibold text-white">Invite Your Team</div>
+                            <div className="text-xs font-semibold text-foreground">Invite Your Team</div>
                             <div className="text-[10px] text-muted-foreground">Add learners and assign skill modules</div>
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-3 p-3 rounded-lg bg-slate-950/60 border border-slate-900">
+                        <div className="flex items-center gap-3 p-3 rounded-lg bg-card border border-border">
                           <div className="h-8 w-8 rounded bg-primary/10 border border-primary/20 flex items-center justify-center text-primary text-xs font-bold">
                             ⚙️
                           </div>
                           <div>
-                            <div className="text-xs font-semibold text-white">Set Up Departments</div>
+                            <div className="text-xs font-semibold text-foreground">Set Up Departments</div>
                             <div className="text-[10px] text-muted-foreground">Structure organizational learning paths</div>
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-3 p-3 rounded-lg bg-slate-950/60 border border-slate-900">
+                        <div className="flex items-center gap-3 p-3 rounded-lg bg-card border border-border">
                           <div className="h-8 w-8 rounded bg-primary/10 border border-primary/20 flex items-center justify-center text-primary text-xs font-bold">
                             📊
                           </div>
                           <div>
-                            <div className="text-xs font-semibold text-white">View Analytics</div>
+                            <div className="text-xs font-semibold text-foreground">View Analytics</div>
                             <div className="text-[10px] text-muted-foreground">Monitor aggregate skill graphs and passes</div>
                           </div>
                         </div>
@@ -483,7 +484,7 @@ function RegisterPageContent() {
       </div>
 
       {/* RIGHT AREA: Features and details containment (45% width) */}
-      <div className="hidden lg:flex lg:w-[45%] bg-gradient-to-br from-slate-900 to-slate-950 border-l border-border relative items-center justify-center px-12 overflow-hidden select-none">
+      <div className="hidden lg:flex lg:w-[45%] bg-gradient-to-br from-slate-900 to-background border-l border-border relative items-center justify-center px-12 overflow-hidden select-none">
         
         {/* Glowing Orbs */}
         <div className="absolute top-1/4 right-1/4 h-80 w-80 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
@@ -506,7 +507,7 @@ function RegisterPageContent() {
           {/* Logo Branding */}
           <div className="space-y-3">
             <Logo size="lg" />
-            <p className="text-slate-400 text-sm font-medium tracking-tight pl-2 border-l border-primary/40">
+            <p className="text-muted-foreground text-sm font-medium tracking-tight pl-2 border-l border-primary/40">
               AI-powered onboarding & personalized learning paths.
             </p>
           </div>
@@ -519,29 +520,29 @@ function RegisterPageContent() {
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.1 * idx, duration: 0.4 }}
-                className="flex items-center gap-3 bg-slate-950/60 border border-slate-900 rounded-xl p-3.5 shadow-md card-hover"
+                className="flex items-center gap-3 bg-card border border-border rounded-xl p-3.5 shadow-md card-hover"
               >
                 <span className="text-xl shrink-0">{feature.icon}</span>
-                <span className="text-xs font-semibold text-slate-200">{feature.text}</span>
+                <span className="text-xs font-semibold text-foreground">{feature.text}</span>
               </motion.div>
             ))}
           </div>
 
           {/* Quote testimonial at bottom */}
-          <div className="p-5 border border-slate-800 rounded-xl bg-slate-950/40 backdrop-blur-xs relative">
-            <div className="absolute -top-3 left-6 px-2 py-0.5 bg-slate-900 border border-slate-800 rounded text-[9px] font-bold text-primary tracking-widest uppercase">
+          <div className="p-5 border border-border rounded-xl bg-card relative">
+            <div className="absolute -top-3 left-6 px-2 py-0.5 bg-muted border border-border rounded text-[9px] font-bold text-primary tracking-widest uppercase">
               Case Study
             </div>
-            <p className="text-[11px] text-slate-400 italic leading-relaxed">
+            <p className="text-[11px] text-muted-foreground italic leading-relaxed">
               &ldquo;Transitioning our employee onboarding to EZ LEARN helped cut path-generation delay by 70%. The AI curated resource engine maps exact skill dependencies without requiring manual syllabus builds.&rdquo;
             </p>
             <div className="mt-3 flex items-center gap-2">
-              <div className="h-6 w-6 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-[10px] text-white font-bold">
+              <div className="h-6 w-6 rounded-full bg-muted border border-border flex items-center justify-center text-[10px] text-foreground font-bold">
                 JD
               </div>
               <div>
-                <div className="text-[10px] font-bold text-white">John Doe</div>
-                <div className="text-[8px] text-slate-500">Director of Engineering, TechScale</div>
+                <div className="text-[10px] font-bold text-foreground">John Doe</div>
+                <div className="text-[8px] text-muted-foreground">Director of Engineering, TechScale</div>
               </div>
             </div>
           </div>

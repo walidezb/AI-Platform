@@ -7,7 +7,7 @@ export default async function Header() {
   const { userId } = await auth();
 
   return (
-    <header className="border-b border-slate-900 bg-slate-950/80 backdrop-blur-md sticky top-0 z-50">
+    <header className="border-b border-border bg-card/85 backdrop-blur-md sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 group">
@@ -22,7 +22,7 @@ export default async function Header() {
             <>
               <Link
                 href="/sign-in"
-                className="text-sm font-medium text-slate-300 hover:text-white transition-colors"
+                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
               >
                 Sign In
               </Link>

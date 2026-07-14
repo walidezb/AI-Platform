@@ -40,7 +40,7 @@ export function Logo({ size = 'md', className, hideText = false }: LogoProps) {
         />
       </div>
       {!hideText && (
-        <span className={cn("font-heading text-white leading-none uppercase", textSizes[size])}>
+        <span className={cn("font-heading text-foreground leading-none uppercase", textSizes[size])}>
           EZ <span className="bg-gradient-primary bg-clip-text text-transparent">LEARN</span>
         </span>
       )}

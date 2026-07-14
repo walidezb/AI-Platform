@@ -3,10 +3,10 @@
 import React from 'react';
 
 export function AnimatedBackground() {
-  const gridPattern = 'linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px)';
+  const gridPattern = 'linear-gradient(rgba(26, 36, 51, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(26, 36, 51, 0.03) 1px, transparent 1px)';
 
   return (
-    <div className="fixed inset-0 -z-10 overflow-hidden bg-[#090912]">
+    <div className="fixed inset-0 -z-10 overflow-hidden bg-[#F0F5FB]">
       <style dangerouslySetInnerHTML={{ __html: `
         @keyframes orbFloat1 {
           0%, 100% { transform: translate(0, 0) scale(1); }
@@ -39,18 +39,18 @@ export function AnimatedBackground() {
       <div 
         className="animate-orb-float-1 absolute -top-32 -left-32 rounded-full blur-3xl w-[300px] h-[300px] md:w-[600px] md:h-[600px] pointer-events-none"
         style={{ 
-          background: 'radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 70%)'
+          background: 'radial-gradient(circle, rgba(74, 144, 217, 0.1) 0%, transparent 70%)'
         }} 
       />
       <div 
         className="animate-orb-float-2 absolute -bottom-32 -right-32 rounded-full blur-3xl w-[250px] h-[250px] md:w-[500px] md:h-[500px] pointer-events-none"
         style={{ 
-          background: 'radial-gradient(circle, rgba(139, 92, 246, 0.12) 0%, transparent 70%)'
+          background: 'radial-gradient(circle, rgba(52, 201, 176, 0.08) 0%, transparent 70%)'
         }} 
       />
 
       {/* Bottom Gradient Fade */}
-      <div className="absolute bottom-0 inset-x-0 h-48 bg-gradient-to-t from-[#090912] to-transparent pointer-events-none" />
+      <div className="absolute bottom-0 inset-x-0 h-48 bg-gradient-to-t from-[#F0F5FB] to-transparent pointer-events-none" />
     </div>
   );
 }
