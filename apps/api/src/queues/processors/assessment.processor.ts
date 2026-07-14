@@ -10,9 +10,15 @@ export class AssessmentProcessor {
 
   @Process(JOB_NAMES.ASSESSMENT_COMPLETED)
   async handleAssessmentCompleted(job: Bull.Job<AssessmentCompletedPayload>) {
-    this.logger.log(`Processing assessment completed: ${job.data.assessmentId}`);
-    // TODO Phase 3: trigger path generation
-    this.logger.log(`Assessment ${job.data.assessmentId} processed successfully`);
+    this.logger.log(
+      `✅ Assessment ${job.data.assessmentId} complete for user ${job.data.userId}`
+    );
+    this.logger.log(
+      `⏳ Path generation will be triggered here in Step 2.6`
+    );
+    this.logger.log(
+      `Skill profile: ${JSON.stringify(job.data.skillProfile, null, 2)}`
+    );
   }
 
   @OnQueueCompleted()

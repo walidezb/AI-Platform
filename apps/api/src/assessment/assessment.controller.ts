@@ -4,6 +4,7 @@ import {
   Get,
   Body,
   Param,
+  Query,
   Res,
   Headers,
   NotFoundException,
@@ -214,5 +215,75 @@ export class AssessmentController {
     });
 
     return { success: true };
+  }
+
+  @Get(':userId/path-status')
+  @Public()
+  async getPathStatus(
+    @Param('userId') userId: string,
+    @Query('token') onboardingToken: string,
+  ) {
+    // Validate via onboarding token (public route)
+    const user = await this.prisma.user.findFirst({
+      where: { onboardingToken, id: userId }
+    });
+    if (!user) throw new NotFoundException();
+
+    // Check assessment
+    const assessment = await this.prisma.assessment.findFirst({
+      where: { userId, status: 'COMPLETED' },
+      orderBy: { completedAt: 'desc' },
+      select: {
+        id: true,
+        status: true,
+        identifiedRole: true,
+        experienceLevel: true,
+        completedAt: true,
+      }
+    });
+
+    if (!assessment) {
+      return { status: 'ASSESSING', pathReady: false };
+    }
+
+    // Check if learning path exists
+    const path = await this.prisma.learningPath.findFirst({
+      where: { userId, status: { not: 'DRAFT' } },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        title: true,
+        status: true,
+        totalMilestones: true,
+        estimatedHours: true,
+        createdAt: true,
+      }
+    });
+
+    if (!path) {
+      return {
+        status: 'GENERATING',
+        pathReady: false,
+        assessment: {
+          identifiedRole: assessment.identifiedRole,
+          experienceLevel: assessment.experienceLevel,
+        }
+      };
+    }
+
+    return {
+      status: 'READY',
+      pathReady: true,
+      path: {
+        id: path.id,
+        title: path.title,
+        totalMilestones: path.totalMilestones,
+        estimatedHours: path.estimatedHours,
+      },
+      assessment: {
+        identifiedRole: assessment.identifiedRole,
+        experienceLevel: assessment.experienceLevel,
+      }
+    };
   }
 }
