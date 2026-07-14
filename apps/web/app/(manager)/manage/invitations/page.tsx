@@ -3,7 +3,6 @@
 import React, { useState, useRef } from 'react';
 import { useInvitations, useInvitationStats, Invitation } from '@/hooks/manager/useInvitations';
 import { useDepartments } from '@/hooks/manager/useDepartments';
-import { copyToClipboard } from '@/lib/clipboard';
 import { timeAgo } from '@/lib/utils/date';
 import { cn } from '@/lib/utils';
 import Papa from 'papaparse';

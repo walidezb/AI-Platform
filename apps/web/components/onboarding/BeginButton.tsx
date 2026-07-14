@@ -3,7 +3,8 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2, ArrowRight } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { motion } from 'framer-motion';
+import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
 interface BeginButtonProps {
@@ -39,22 +40,31 @@ export function BeginButton({ token, isReturning }: BeginButtonProps) {
   };
 
   return (
-    <Button
+    <motion.button
+      whileHover={{ scale: 1.01 }}
+      whileTap={{ scale: 0.98 }}
       onClick={handleBegin}
       disabled={isLoading}
-      className="w-full bg-gradient-primary border-0 text-white font-bold h-11 text-sm rounded-xl transition-all duration-300 hover:scale-[1.02] shadow-glow-sm"
+      className={cn(
+        "w-full py-4 px-6 rounded-xl font-semibold text-base select-none",
+        "bg-gradient-primary text-white",
+        "shadow-glow-sm hover:shadow-glow-md",
+        "transition-all duration-200",
+        "flex items-center justify-center gap-2 cursor-pointer",
+        isLoading && "opacity-80 cursor-not-allowed"
+      )}
     >
       {isLoading ? (
         <>
-          <Loader2 className="h-4 w-4 mr-2 animate-spin shrink-0" />
-          Initializing...
+          <Loader2 className="h-5 w-5 animate-spin shrink-0" />
+          Preparing your session...
         </>
       ) : (
         <>
-          {isReturning ? 'Continue Assessment' : 'Begin Your Assessment'}
-          <ArrowRight className="h-4 w-4 ml-2 shrink-0" />
+          {isReturning ? 'Continue Assessment' : 'Begin My Assessment'}
+          <ArrowRight className="h-5 w-5 shrink-0" />
         </>
       )}
-    </Button>
+    </motion.button>
   );
 }
