@@ -5,7 +5,7 @@
   "scripts": {
     "dev:web": "pnpm --filter web dev",
     "dev:api": "pnpm --filter api start:dev",
-    "dev:ai": "cd apps/ai && uvicorn app.main:app --reload",
+    "dev:ai": "cd apps/ai && .venv/bin/uvicorn app.main:app --reload",
     "dev:all": "concurrently \"pnpm dev:web\" \"pnpm dev:api\" \"pnpm dev:ai\""
   },
   "devDependencies": {
