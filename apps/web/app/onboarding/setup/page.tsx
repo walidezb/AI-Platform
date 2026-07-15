@@ -2,11 +2,12 @@
 
 import { Suspense, useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useUser } from '@clerk/nextjs';
+import { useUser, useSession } from '@clerk/nextjs';
 import { Sparkles } from 'lucide-react';
 
 function OnboardingSetupContent() {
   const { user, isLoaded } = useUser();
+  const { session } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
   const onboardingToken = searchParams.get('token');
@@ -40,6 +41,7 @@ function OnboardingSetupContent() {
           throw new Error(errData.message || 'Failed to sync learner with database');
         }
 
+        await session?.reload();
         router.push('/learn/dashboard');
       } else {
         // Sync Org Admin (Manager)
@@ -61,6 +63,7 @@ function OnboardingSetupContent() {
           throw new Error(errData.message || 'Failed to sync user with database');
         }
 
+        await session?.reload();
         router.push('/manage/dashboard');
       }
     } catch (err: unknown) {
@@ -68,7 +71,7 @@ function OnboardingSetupContent() {
       setError(message);
       setLoading(false);
     }
-  }, [user, onboardingToken, router]);
+  }, [user, onboardingToken, router, session]);
 
   useEffect(() => {
     if (isLoaded && user && !syncAttempted.current) {

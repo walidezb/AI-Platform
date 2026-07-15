@@ -1,4 +1,4 @@
-import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
+import { clerkMiddleware, createRouteMatcher, clerkClient } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 
 const isPublicRoute = createRouteMatcher([
@@ -21,7 +21,17 @@ export default clerkMiddleware(async (auth, request) => {
 
     // Check if the user has a role assigned in their public metadata
     const metadata = (sessionClaims?.publicMetadata || {}) as Record<string, unknown>;
-    const role = metadata.role;
+    let role = metadata.role;
+
+    if (userId && !role) {
+      try {
+        const client = await clerkClient();
+        const user = await client.users.getUser(userId);
+        role = user.publicMetadata?.role;
+      } catch (err) {
+        console.error('Error fetching Clerk user metadata fallback:', err);
+      }
+    }
 
     // If signed in but no role is assigned yet, redirect to onboarding setup
     if (userId && !role && request.nextUrl.pathname !== '/onboarding/setup') {

@@ -11,6 +11,11 @@ import { Public } from './decorators/public.decorator';
 import { CurrentUser } from './decorators/current-user.decorator';
 
 import { AuthThrottle } from './throttle.config';
+import { createClerkClient } from '@clerk/backend';
+
+const clerkClient = createClerkClient({
+  secretKey: process.env.CLERK_SECRET_KEY || '',
+});
 
 interface SyncUserDto {
   clerkId: string;
@@ -63,6 +68,13 @@ export class AuthController {
       });
     }
 
+    // Sync role metadata to Clerk
+    await clerkClient.users.updateUserMetadata(body.clerkId, {
+      publicMetadata: {
+        role: user.role,
+      },
+    });
+
     return {
       userId: user.id,
       role: user.role,
@@ -86,7 +98,7 @@ export class AuthController {
       throw new NotFoundException('Invalid onboarding token');
     }
 
-    return this.prisma.user.update({
+    const updatedUser = await this.prisma.user.update({
       where: { id: user.id },
       data: {
         clerkId: body.clerkId,
@@ -95,6 +107,15 @@ export class AuthController {
         onboardingCompletedAt: new Date(),
       },
     });
+
+    // Sync role metadata to Clerk
+    await clerkClient.users.updateUserMetadata(body.clerkId, {
+      publicMetadata: {
+        role: updatedUser.role,
+      },
+    });
+
+    return updatedUser;
   }
 
   @Get('me')
