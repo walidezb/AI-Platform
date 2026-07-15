@@ -3,15 +3,35 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LucideIcon } from 'lucide-react';
+import { 
+  LayoutDashboard, 
+  Users, 
+  Mail, 
+  BarChart3, 
+  Settings,
+  Map,
+  BookOpen,
+  Award
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '../ui/badge';
 import { UserButton } from '@clerk/nextjs';
 
+export const ICON_MAP = {
+  dashboard: LayoutDashboard,
+  users: Users,
+  mail: Mail,
+  analytics: BarChart3,
+  settings: Settings,
+  map: Map,
+  bookOpen: BookOpen,
+  award: Award,
+};
+
 export interface NavItem {
   label: string;
   href: string;
-  icon: LucideIcon;
+  icon: keyof typeof ICON_MAP;
   badge?: string | number;
 }
 
@@ -60,7 +80,7 @@ export function Sidebar({ items, org, user }: SidebarProps) {
       <nav className="flex-grow space-y-1.5 px-4 py-6 overflow-y-auto">
         {items.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
-          const Icon = item.icon;
+          const Icon = ICON_MAP[item.icon] || LayoutDashboard;
 
           return (
             <Link

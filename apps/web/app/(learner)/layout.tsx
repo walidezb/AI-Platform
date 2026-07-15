@@ -3,13 +3,7 @@ import { redirect } from 'next/navigation';
 import { requireAuth } from '@/lib/auth';
 import { serverFetch } from '@/lib/api-server';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
-import { 
-  LayoutDashboard, 
-  Map, 
-  BookOpen, 
-  Award, 
-  Settings 
-} from 'lucide-react';
+
 
 interface User {
   id: string;
@@ -76,11 +70,11 @@ export default async function LearnerLayout({
   }
 
   const navItems = [
-    { label: 'Dashboard',    href: '/learn/dashboard', icon: LayoutDashboard },
-    { label: 'My Path',      href: '/learn/path',      icon: Map },
-    { label: 'Resources',    href: '/learn/path',      icon: BookOpen },
-    { label: 'Achievements', href: '/learn/dashboard', icon: Award },
-    { label: 'Settings',     href: '/learn/settings',  icon: Settings },
+    { label: 'Dashboard',    href: '/learn/dashboard', icon: 'dashboard' as const },
+    { label: 'My Path',      href: '/learn/path',      icon: 'map' as const },
+    { label: 'Resources',    href: '/learn/path',      icon: 'bookOpen' as const },
+    { label: 'Achievements', href: '/learn/dashboard', icon: 'award' as const },
+    { label: 'Settings',     href: '/learn/settings',  icon: 'settings' as const },
   ];
 
   return (
