@@ -211,8 +211,8 @@
 
   /* Glowing border on focus/hover */
   .glow-border {
-    box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.3),
-                0 0 20px rgba(99, 102, 241, 0.1);
+    box-shadow: 0 0 0 1px rgba(14, 99, 150, 0.3),
+                0 0 20px rgba(14, 99, 150, 0.1);
   }
 
   /* Subtle card glow on hover */
@@ -220,8 +220,8 @@
     @apply transition-all duration-200;
   }
   .card-hover:hover {
-    box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.2),
-                0 8px 32px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 0 0 1px rgba(14, 99, 150, 0.2),
+                0 8px 32px rgba(0, 0, 0, 0.15);
     transform: translateY(-1px);
   }
 

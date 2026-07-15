@@ -83,8 +83,8 @@ function OnboardingSetupContent() {
   return (
     <div className="relative min-h-screen flex flex-col items-center justify-center bg-slate-950 px-4">
       {/* Background decoration */}
-      <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-blue-500/10 blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] rounded-full bg-indigo-500/10 blur-[120px] pointer-events-none" />
+      <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-primary/10 blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] rounded-full bg-accent/10 blur-[120px] pointer-events-none" />
 
       <div className="w-full max-w-md bg-slate-900/50 border border-slate-800 backdrop-blur-xl rounded-2xl p-8 text-center shadow-2xl z-10">
         <h2 className="text-2xl font-bold text-white mb-4">Setting up your account...</h2>
@@ -111,7 +111,7 @@ function OnboardingSetupContent() {
                 syncAttempted.current = false;
                 syncUser();
               }}
-              className="w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold rounded-xl transition-all shadow-lg shadow-indigo-500/25"
+              className="w-full py-3 bg-gradient-primary hover:opacity-90 text-white font-semibold rounded-xl transition-all shadow-lg shadow-primary/20"
             >
               Retry Setup
             </button>
