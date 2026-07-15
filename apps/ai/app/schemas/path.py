@@ -44,13 +44,47 @@ class RubricCriteria(BaseModel):
     excellent: str        # what excellent looks like
     acceptable: str       # what passing looks like
 
+class DifficultyLevel(str, Enum):
+    FOUNDATIONAL = "FOUNDATIONAL"   # recall + basic comprehension
+    APPLIED = "APPLIED"             # apply to a scenario
+    ANALYTICAL = "ANALYTICAL"       # analyze + evaluate
+    CREATIVE = "CREATIVE"           # design + create original work
+
+class MultipleChoiceOption(BaseModel):
+    label: str            # "A", "B", "C", "D"
+    text: str             # option text
+    isCorrect: bool
+    explanation: str      # why this is right/wrong
+
 class GeneratedExercise(BaseModel):
     title: str
-    instructions: str
+    instructions: str = Field(description="Clear, detailed instructions")
     exerciseType: ExerciseType
-    scenarioContext: Optional[str] = None
-    rubric: List[RubricCriteria]
+    difficultyLevel: DifficultyLevel
+    estimatedMinutes: int = Field(ge=10, le=120)
+    scenarioContext: Optional[str] = Field(
+        None,
+        description="Real-world scenario that frames the exercise"
+    )
+    # For MULTIPLE_CHOICE type
+    multipleChoiceOptions: Optional[List[MultipleChoiceOption]] = None
+    # For WRITTEN and SCENARIO types
+    rubric: Optional[List[RubricCriteria]] = None
+    sampleAnswer: Optional[str] = Field(
+        None,
+        description="Example of an excellent answer (for written exercises)"
+    )
+    hintsEnabled: bool = True
+    hints: List[str] = Field(
+        default=[],
+        description="2-3 hints shown on demand if learner is stuck"
+    )
     passingScore: float = 70
+    maxAttempts: int = 3
+    tags: List[str] = Field(
+        default=[],
+        description="Skills tested by this exercise"
+    )
 
 class GeneratedMilestone(BaseModel):
     sequenceOrder: int
@@ -59,7 +93,7 @@ class GeneratedMilestone(BaseModel):
     learningObjectives: List[str] = Field(min_length=2, max_length=5)
     estimatedHours: int = Field(ge=1, le=20)
     modules: List[GeneratedModule]
-    exercises: List[GeneratedExercise]
+    exercises: List[GeneratedExercise] = Field(default_factory=list)
 
 class GeneratedPath(BaseModel):
     title: str = Field(description="Engaging, specific path title")
@@ -80,3 +114,18 @@ class PathSaveRequest(BaseModel):
     userId: str
     organizationId: str
     path: GeneratedPath
+
+class ExerciseGenerationRequest(BaseModel):
+    milestoneTitle: str
+    milestoneDescription: str
+    learningObjectives: List[str]
+    modules: List[Dict]         # module titles + types for context
+    domain: str
+    experienceLevel: str
+    jobRole: str
+    exerciseCount: int = 2      # how many to generate per milestone
+    language: str = "EN"
+
+class ExerciseGenerationResult(BaseModel):
+    milestoneTitle: str
+    exercises: List[GeneratedExercise]

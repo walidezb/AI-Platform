@@ -592,7 +592,7 @@ export default function DesignSystemPage() {
                   <div>
                     <span className="text-xs text-muted-foreground font-bold tracking-wider mb-3 block">TopBar Preview</span>
                     <div className="border border-border rounded-xl overflow-hidden bg-slate-950">
-                      <TopBar title="Dashboard Overview" breadcrumb={['LearnPath AI', 'Manage', 'Dashboard']} unreadNotificationsCount={3} />
+                      <TopBar title="Dashboard Overview" breadcrumb={['LearnPath AI', 'Manage', 'Dashboard']} />
                     </div>
                   </div>
 

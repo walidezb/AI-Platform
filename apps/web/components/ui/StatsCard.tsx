@@ -81,7 +81,7 @@ export function StatsCard({
           </div>
         </div>
         <div>
-          <div className="font-heading text-3xl font-bold tracking-tight text-white mb-2 fade-in">
+          <div className="font-heading text-3xl font-bold tracking-tight text-foreground mb-2 fade-in">
             {renderValue}
           </div>
           {trend && (

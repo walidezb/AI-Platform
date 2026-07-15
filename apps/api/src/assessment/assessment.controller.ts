@@ -14,6 +14,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { AssessmentService } from './assessment.service';
+import { QueueService } from '../queues/queue.service';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { OrgId } from '../auth/decorators/org-id.decorator';
 import { Public } from '../auth/decorators/public.decorator';
@@ -27,6 +28,7 @@ export class AssessmentController {
     private service: AssessmentService,
     private prisma: PrismaService,
     private config: ConfigService,
+    private queue: QueueService,
   ) {}
 
   @Post('start')
@@ -212,6 +214,20 @@ export class AssessmentController {
       userId: body.userId,
       organizationId: body.organizationId,
       skillProfile: body.skillProfile,
+    });
+
+    // Fetch user details for notification
+    const user = await this.prisma.user.findUnique({
+      where: { id: body.userId },
+      select: { fullName: true }
+    });
+
+    // Queue assessment completed notification
+    await this.queue.add('ASSESSMENT_COMPLETED', {
+      userId: body.userId,
+      organizationId: body.organizationId,
+      assessment: body.skillProfile,
+      employeeName: user?.fullName || 'Employee',
     });
 
     return { success: true };

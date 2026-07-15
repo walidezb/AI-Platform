@@ -29,18 +29,18 @@ export function StatusBadge({ status, className }: StatusBadgeProps) {
     },
     locked: {
       label: 'Locked',
-      colorClass: 'bg-slate-900 text-slate-500 border-slate-800',
+      colorClass: 'bg-muted text-muted-foreground border-border',
       icon: Lock,
     },
     'in-progress': {
       label: 'In Progress',
-      colorClass: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20',
-      dotClass: 'bg-indigo-400 animate-pulse',
+      colorClass: 'bg-indigo-500/10 text-indigo-500 border-indigo-500/20',
+      dotClass: 'bg-indigo-500 animate-pulse',
     },
     'not-started': {
       label: 'Not Started',
-      colorClass: 'bg-slate-900 text-slate-400 border-slate-800',
-      dotClass: 'bg-slate-500',
+      colorClass: 'bg-muted text-muted-foreground border-border',
+      dotClass: 'bg-muted-foreground/65',
     },
     failed: {
       label: 'Failed',

@@ -91,4 +91,9 @@ export class QueueService {
       }))
     );
   }
+
+  // Delegate direct additions for custom notification names
+  async add(name: string, payload: any) {
+    return this.notificationQueue.add(name, payload, { attempts: 5 });
+  }
 }

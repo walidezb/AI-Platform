@@ -7,6 +7,7 @@ import { PathGenerationProcessor } from './processors/path-generation.processor'
 import { ResourceCurationProcessor } from './processors/resource-curation.processor';
 import { ExerciseGenerationProcessor } from './processors/exercise-generation.processor';
 import { NotificationProcessor } from './processors/notification.processor';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { NotificationProcessor } from './processors/notification.processor';
       { name: QUEUE_NAMES.EXERCISE_GENERATION },
       { name: QUEUE_NAMES.NOTIFICATION },
     ),
+    NotificationsModule,
   ],
   providers: [
     QueueService,

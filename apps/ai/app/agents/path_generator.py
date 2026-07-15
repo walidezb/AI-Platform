@@ -251,11 +251,21 @@ Generate the complete learning path JSON now:"""
         self,
         skill_profile: Dict,
         role_requirements: Optional[Dict] = None,
+        include_exercises: bool = True,
     ) -> Optional[GeneratedPath]:
         prompt = self._build_prompt(skill_profile, role_requirements)
 
+        sys_prompt = PATH_GENERATION_SYSTEM_PROMPT
+        if not include_exercises:
+            sys_prompt = sys_prompt.replace(
+                ',\n      "exercises": [\n        {\n          "title": "string",\n          "instructions": "string — clear, detailed instructions",\n          "exerciseType": "WRITTEN|MULTIPLE_CHOICE|SCENARIO",\n          "scenarioContext": "string or null — real-world scenario",\n          "rubric": [\n            {\n              "criterion": "string",\n              "weight": number (all weights must sum to 100),\n              "description": "string",\n              "excellent": "string — what excellent looks like",\n              "acceptable": "string — what passing looks like"\n            }\n          ],\n          "passingScore": 70\n        }\n      ]',
+                ""
+            )
+            sys_prompt = sys_prompt.replace("- 1-2 exercises per milestone\n", "")
+            sys_prompt += "\n\nCRITICAL: Do NOT include exercises in the JSON output. They will be generated separately."
+
         messages = [
-            SystemMessage(content=PATH_GENERATION_SYSTEM_PROMPT),
+            SystemMessage(content=sys_prompt),
             HumanMessage(content=prompt),
         ]
 

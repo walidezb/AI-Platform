@@ -17,6 +17,7 @@ interface DashboardLayoutProps {
   user: {
     fullName: string;
     role: string;
+    experienceLevel?: string;
   };
 }
 

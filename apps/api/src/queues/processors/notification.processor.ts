@@ -1,23 +1,81 @@
 import { Processor, Process, OnQueueFailed, OnQueueCompleted, OnQueueStalled } from '@nestjs/bull';
 import { Logger } from '@nestjs/common';
 import * as Bull from 'bull';
+import { NotificationsService } from '../../notifications/notifications.service';
+import { UserRole } from '@prisma/client';
 import { QUEUE_NAMES } from '../queue.constants';
-import { NotificationPayload } from '../queue.types';
 
 @Processor(QUEUE_NAMES.NOTIFICATION)
 export class NotificationProcessor {
   private readonly logger = new Logger(NotificationProcessor.name);
 
-  @Process('*') // Handles all notification job names
-  async handleNotification(job: Bull.Job<NotificationPayload>) {
-    const type = job.name.split('.').pop() || job.data.type;
-    this.logger.log(`Sending notification type: ${type} to user: ${job.data.userId}`);
-    // TODO Phase 3: trigger notification delivery
-    this.logger.log(`Notification of type ${type} sent to user ${job.data.userId} successfully`);
+  constructor(private readonly notificationService: NotificationsService) {}
+
+  @Process('PATH_READY')
+  async handlePathReady(job: Bull.Job<{
+    userId: string;
+    organizationId: string;
+    pathId: string;
+    pathTitle: string;
+    assessment?: any;
+  }>) {
+    this.logger.log(`Processing PATH_READY for user ${job.data.userId}`);
+
+    await Promise.all([
+      // 1. Send email to employee
+      this.notificationService.sendPathReadyEmail(job.data.userId),
+
+      // 2. Create in-app notification for employee
+      this.notificationService.createPathReadyNotification(
+        job.data.userId,
+        job.data.organizationId,
+        job.data.pathTitle,
+      ),
+    ]);
+
+    this.logger.log(`PATH_READY notifications sent for ${job.data.userId}`);
+  }
+
+  @Process('ASSESSMENT_COMPLETED')
+  async handleAssessmentCompleted(job: Bull.Job<{
+    userId: string;
+    organizationId: string;
+    assessment: any;
+    employeeName: string;
+  }>) {
+    this.logger.log(
+      `Processing ASSESSMENT_COMPLETED for ${job.data.employeeName}`
+    );
+
+    // Get all managers in org for in-app notifications
+    const managers = await this.notificationService['prisma'].user.findMany({
+      where: {
+        organizationId: job.data.organizationId,
+        role: { in: [UserRole.MANAGER, UserRole.ORG_ADMIN] },
+      },
+      select: { id: true }
+    });
+
+    await Promise.all([
+      // 1. Send email to all managers
+      this.notificationService.sendAssessmentCompleteToManager(
+        job.data.userId,
+        job.data.assessment,
+      ),
+
+      // 2. Create in-app notification for each manager
+      ...managers.map(m =>
+        this.notificationService.createAssessmentCompleteNotification(
+          m.id,
+          job.data.organizationId,
+          job.data.employeeName,
+        )
+      ),
+    ]);
   }
 
   @OnQueueCompleted()
-  onCompleted(job: Bull.Job, result: any) {
+  onCompleted(job: Bull.Job) {
     this.logger.log(`Job ${job.id} completed in ${job.queue.name}`);
   }
 

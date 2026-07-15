@@ -102,10 +102,11 @@ enum InvitationStatus {
 
 enum NotificationType {
   PATH_READY
-  MILESTONE_COMPLETE
-  STALLED_ALERT
-  EXERCISE_PASSED
-  BUDGET_WARNING
+  MILESTONE_COMPLETED
+  EXERCISE_GRADED
+  ASSESSMENT_COMPLETED
+  TEAM_PROGRESS
+  SYSTEM
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -416,20 +417,23 @@ model Completion {
 }
 
 model Notification {
-  id        String           @id @default(cuid())
-  userId    String
-  orgId     String
-  type      NotificationType
-  title     String
-  body      String
-  isRead    Boolean          @default(false)
-  data      Json?
-  createdAt DateTime         @default(now())
+  id             String           @id @default(cuid())
+  userId         String
+  organizationId String
+  type           NotificationType
+  title          String
+  body           String
+  ctaLabel       String?
+  ctaUrl         String?
+  isRead         Boolean          @default(false)
+  readAt         DateTime?
+  createdAt      DateTime         @default(now())
 
-  user         User         @relation(fields: [userId], references: [id])
-  organization Organization @relation(fields: [orgId], references: [id])
+  user           User             @relation(fields: [userId], references: [id])
+  organization   Organization     @relation(fields: [organizationId], references: [id])
 
   @@index([userId, isRead])
+  @@index([organizationId])
 }
 
 model AiUsageLog {

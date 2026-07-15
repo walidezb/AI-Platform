@@ -25,6 +25,7 @@ interface SidebarProps {
   user: {
     fullName: string;
     role: string;
+    experienceLevel?: string;
   };
 }
 
@@ -94,9 +95,16 @@ export function Sidebar({ items, org, user }: SidebarProps) {
           <UserButton />
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium truncate text-foreground leading-normal">{user.fullName}</p>
-            <p className="text-xs text-muted-foreground capitalize leading-none mt-0.5">
-              {user.role.toLowerCase().replace('_', ' ')}
-            </p>
+            <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
+              <span className="text-xs text-muted-foreground capitalize leading-none">
+                {user.role.toLowerCase().replace('_', ' ')}
+              </span>
+              {user.experienceLevel && (
+                <Badge variant="outline" className="text-[9px] px-1.5 py-0.5 border-primary/30 text-primary font-extrabold uppercase shrink-0 leading-none">
+                  {user.experienceLevel.toLowerCase()}
+                </Badge>
+              )}
+            </div>
           </div>
         </div>
       </div>

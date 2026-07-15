@@ -1,11 +1,14 @@
 import logging
 import httpx
 import asyncio
+import uuid
 from fastapi import APIRouter, HTTPException, BackgroundTasks
 from app.agents.path_generator import PathGeneratorAgent
 from app.agents.resource_curator import ResourceCuratorAgent
+from app.agents.exercise_generator import ExerciseGeneratorAgent
 from app.schemas.path import PathGenerationRequest, GeneratedPath
 from app.services.usage_logger import log_usage_to_api
+from app.services.pinecone_service import pinecone_service
 from app.config import settings
 
 router = APIRouter(prefix="/path", tags=["Path Generation"])
@@ -27,20 +30,40 @@ async def generate_path(
 
     agent = PathGeneratorAgent()
     curator = ResourceCuratorAgent()
+    exercise_agent = ExerciseGeneratorAgent()
 
-    # Stage 1: Generate path structure
+    # Stage 1: Generate path structure (no exercises)
     path = await agent.generate(
         skill_profile=request.skillProfile,
         role_requirements=request.roleRequirements,
+        include_exercises=False,
     )
 
     if not path:
         raise HTTPException(500, "Failed to generate learning path after 3 attempts")
 
-    # Stage 2: Score resources for each module
+    # Stage 2: Curate all resources (NEW — replaces stub)
+    language = request.skillProfile.get("learning_preferences", "EN")
+    if "video" in language.lower():
+        language = "EN"  # normalize
+
+    path.milestones = await curator.curate_all_modules(
+        path_milestones=path.milestones,
+        domain=path.domain,
+        experience_level=request.skillProfile.get("experience_level", "INTERMEDIATE"),
+        language=language if language in ["EN", "AR"] else "EN",
+    )
+
+    # Stage 3: Generate exercises (dedicated agent)
+    exercise_map = await exercise_agent.generate_for_all_milestones(
+        milestones=[m.model_dump() for m in path.milestones],
+        domain=path.domain,
+        experience_level=request.skillProfile.get("experience_level", "INTERMEDIATE"),
+        job_role=request.skillProfile.get("identified_role", "Professional"),
+        language=language if language in ["EN", "AR"] else "EN",
+    )
     for milestone in path.milestones:
-        for module in milestone.modules:
-            module.resources = await curator.validate_and_score(module.resources)
+        milestone.exercises = exercise_map.get(milestone.title, [])
 
     logger.info(
         f"Path generation complete: {path.title}, "
@@ -49,13 +72,54 @@ async def generate_path(
         f"{sum(sum(len(mod.resources) for mod in m.modules) for m in path.milestones)} resources"
     )
 
-    # Stage 3: Save to DB via NestJS
+    # ── PINECONE: Dedup + Batch Upsert ──────────────────
+    level = request.skillProfile.get("experience_level", "INTERMEDIATE")
+
+    # Collect all resources across all milestones
+    all_resources = []
+    dedup_map = {}   # url → existing_resource_id (if duplicate)
+
+    for milestone in path.milestones:
+        for module in milestone.modules:
+            for resource in module.resources:
+                # Check for duplicate by URL first (fast check)
+                if resource.url in dedup_map:
+                    continue
+
+                # Semantic duplicate check via Pinecone
+                is_dup, existing_id = await pinecone_service.is_duplicate(
+                    resource=resource.model_dump(),
+                    domain=path.domain,
+                )
+
+                if is_dup and existing_id:
+                    dedup_map[resource.url] = existing_id
+                    logger.info(f"Duplicate resource detected: {resource.title[:50]}")
+                else:
+                    # Assign temporary ID for upsert
+                    tmp_id = str(uuid.uuid4())
+                    dedup_map[resource.url] = None  # new resource
+                    all_resources.append({
+                        "id": tmp_id,
+                        "resource": resource.model_dump(),
+                        "domain": path.domain,
+                        "level": level,
+                        "orgId": request.organizationId,
+                    })
+
+    # Batch upsert all new resources
+    if all_resources:
+        upserted = await pinecone_service.upsert_resources_batch(all_resources)
+        logger.info(f"Upserted {upserted} new resources to Pinecone")
+
+    # Save to DB (includes dedup_map for reuse)
     background_tasks.add_task(
         save_path_to_api,
         assessment_id=request.assessmentId,
         user_id=request.userId,
         org_id=request.organizationId,
         path=path,
+        dedup_map=dedup_map,
     )
 
     # Log AI usage
@@ -71,11 +135,22 @@ async def generate_path(
             cost_usd=agent._last_usage["cost_usd"],
         )
 
+    total_exercises = sum(len(v) for v in exercise_map.values())
+    total_resources = sum(
+        len(mod.resources)
+        for m in path.milestones
+        for mod in m.modules
+    )
+
     return {
         "success": True,
         "pathTitle": path.title,
         "milestoneCount": len(path.milestones),
         "estimatedHours": path.estimatedHours,
+        "totalResources": total_resources,
+        "totalExercises": total_exercises,
+        "newResources": len(all_resources),
+        "deduplicatedResources": len(dedup_map) - len(all_resources),
     }
 
 async def save_path_to_api(
@@ -83,6 +158,7 @@ async def save_path_to_api(
     user_id: str,
     org_id: str,
     path: GeneratedPath,
+    dedup_map: dict,
 ):
     """POST the generated path to NestJS for DB persistence."""
     url = f"{settings.API_URL}/internal/paths/save"
@@ -93,6 +169,7 @@ async def save_path_to_api(
         "userId": user_id,
         "organizationId": org_id,
         "path": path.model_dump(),
+        "dedupMap": dedup_map,
     }
 
     for attempt in range(3):
