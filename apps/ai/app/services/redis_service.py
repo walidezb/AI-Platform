@@ -1,7 +1,5 @@
 from typing import Optional
-import json
 import redis.asyncio as aioredis
-from datetime import datetime
 from app.config import settings
 from app.schemas.assessment import AssessmentSession
 

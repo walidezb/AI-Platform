@@ -42,11 +42,11 @@ async def test():
       total_weight = sum(r.weight for r in ex.rubric)
       print(f"  Rubric: {len(ex.rubric)} criteria, weights sum={total_weight}")
       assert total_weight == 100, f"❌ Weights don't sum to 100! Got {total_weight}"
-      print(f"  ✅ Rubric weights valid (sum=100)")
+      print("  ✅ Rubric weights valid (sum=100)")
     if ex.multipleChoiceOptions:
       correct = sum(1 for o in ex.multipleChoiceOptions if o.isCorrect)
       assert correct == 1, f"❌ MCQ has {correct} correct answers!"
-      print(f"  ✅ MCQ has exactly 1 correct answer")
+      print("  ✅ MCQ has exactly 1 correct answer")
     print(f"  Hints: {len(ex.hints)}")
     print()
 

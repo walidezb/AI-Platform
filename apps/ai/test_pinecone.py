@@ -4,7 +4,6 @@ Run: python test_pinecone.py
 """
 import asyncio
 from app.services.pinecone_service import pinecone_service
-from app.services.embedding_service import embedding_service
 
 async def test():
     print("=== Pinecone Integration Test ===\n")
@@ -48,7 +47,7 @@ async def test():
         top_k=3,
         threshold=0.7,
     )
-    print(f"\n✅ Search results for 'TypeScript type system':")
+    print("\n✅ Search results for 'TypeScript type system':")
     for r in results:
         print(f"  - {r['title']} (score: {r['score']})")
 

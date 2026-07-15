@@ -4,7 +4,7 @@ import logging
 from typing import AsyncIterator, Optional
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
-from app.schemas.assessment import SkillProfile, AssessmentSession
+from app.schemas.assessment import SkillProfile
 from app.config import settings
 from app.services.token_counter import token_counter, calculate_cost
 

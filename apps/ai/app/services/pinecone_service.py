@@ -1,5 +1,4 @@
 import logging
-import uuid
 from typing import List, Optional, Tuple
 from pinecone import Pinecone
 from app.config import settings

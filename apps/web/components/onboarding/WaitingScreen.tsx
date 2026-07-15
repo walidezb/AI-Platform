@@ -17,10 +17,6 @@ interface PathData {
   estimatedHours: number;
 }
 
-interface AssessmentData {
-  identifiedRole: string | null;
-  experienceLevel: string | null;
-}
 
 interface WaitingScreenProps {
   token: string;
@@ -38,7 +34,6 @@ export function WaitingScreen({ token, userId }: WaitingScreenProps) {
   const router = useRouter();
   const [status, setStatus] = useState<'ASSESSING' | 'GENERATING' | 'READY'>('GENERATING');
   const [pathData, setPathData] = useState<PathData | null>(null);
-  const [_assessmentData, setAssessmentData] = useState<AssessmentData | null>(null);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [dots, setDots] = useState('.');
 
@@ -52,9 +47,6 @@ export function WaitingScreen({ token, userId }: WaitingScreenProps) {
         const data = await res.json();
         
         setStatus(data.status);
-        if (data.assessment) {
-          setAssessmentData(data.assessment);
-        }
 
         if (data.pathReady && data.path) {
           setPathData(data.path);

@@ -9,7 +9,7 @@ interface PageProps {
   }>;
 }
 
-export async function generateMetadata({ params }: PageProps) {
+export async function generateMetadata() {
   // Don't expose token in title
   return {
     title: 'Your Learning Journey | LearnPath AI',

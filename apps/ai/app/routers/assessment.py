@@ -2,6 +2,7 @@ import logging
 import httpx
 from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException, BackgroundTasks
+from fastapi.responses import StreamingResponse
 from app.schemas.assessment import (
     StartAssessmentRequest, SendMessageRequest,
     MessageResponse, AssessmentSession
@@ -182,7 +183,6 @@ async def send_message(
 
 # ── POST /assessment/{id}/message/stream ──────────────────────────────────────
 
-from fastapi.responses import StreamingResponse
 
 @router.post("/{assessment_id}/message/stream")
 async def send_message_stream(

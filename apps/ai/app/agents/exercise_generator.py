@@ -4,8 +4,7 @@ import logging
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage
 from app.schemas.path import (
-  GeneratedExercise, ExerciseGenerationResult,
-  ExerciseGenerationRequest, DifficultyLevel
+  GeneratedExercise, ExerciseGenerationRequest, DifficultyLevel
 )
 from app.config import settings
 

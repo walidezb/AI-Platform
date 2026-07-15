@@ -6,12 +6,12 @@ export function useLearnerDashboard() {
 
   const { data: path, isLoading: pathLoading } = useQuery({
     queryKey: ['my-path'],
-    queryFn: () => apiClient.get<any>('/paths/my'),
+    queryFn: () => apiClient.get<{ data: Record<string, unknown> | null }>('/paths/my'),
   });
 
   const { data: progress, isLoading: progressLoading } = useQuery({
     queryKey: ['my-progress'],
-    queryFn: () => apiClient.get<any>('/progress/me'),
+    queryFn: () => apiClient.get<{ data: Record<string, unknown> | null }>('/progress/me'),
   });
 
   return {

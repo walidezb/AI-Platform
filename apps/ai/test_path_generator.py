@@ -2,7 +2,7 @@
 Test the path generator with a sample skill profile.
 Run: python test_path_generator.py
 """
-import asyncio, json
+import asyncio
 from app.agents.path_generator import PathGeneratorAgent
 
 async def test():
