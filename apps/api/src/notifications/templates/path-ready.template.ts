@@ -23,10 +23,11 @@ export const pathReadyTemplate = (data: {
 
     <!-- Header -->
     <div style="text-align:center;margin-bottom:32px;">
-      ${data.orgLogo
-        ? `<img src="${data.orgLogo}" alt="${data.orgName}"
+      ${
+        data.orgLogo
+          ? `<img src="${data.orgLogo}" alt="${data.orgName}"
                 style="height:40px;object-fit:contain;margin-bottom:16px;" />`
-        : `<div style="font-size:24px;font-weight:700;color:#fff;
+          : `<div style="font-size:24px;font-weight:700;color:#fff;
                        margin-bottom:8px;">${data.orgName}</div>`
       }
       <div style="font-size:13px;color:#6b7280;">
@@ -107,10 +108,24 @@ export const pathReadyTemplate = (data: {
         ✨ What to expect:
       </div>
       ${[
-        ['🎯', 'Milestone-by-milestone learning', 'Each milestone unlocks as you complete the previous'],
-        ['📚', 'Curated resources', 'Articles, videos and exercises handpicked by AI'],
-        ['✏️', 'Hands-on exercises', 'Apply what you learn with real-world scenarios'],
-      ].map(([icon, title, desc]) => `
+        [
+          '🎯',
+          'Milestone-by-milestone learning',
+          'Each milestone unlocks as you complete the previous',
+        ],
+        [
+          '📚',
+          'Curated resources',
+          'Articles, videos and exercises handpicked by AI',
+        ],
+        [
+          '✏️',
+          'Hands-on exercises',
+          'Apply what you learn with real-world scenarios',
+        ],
+      ]
+        .map(
+          ([icon, title, desc]) => `
         <div style="display:flex;gap:12px;margin-bottom:14px;">
           <div style="font-size:20px;flex-shrink:0;">${icon}</div>
           <div>
@@ -119,7 +134,9 @@ export const pathReadyTemplate = (data: {
             <div style="color:#6b7280;font-size:13px;">${desc}</div>
           </div>
         </div>
-      `).join('')}
+      `,
+        )
+        .join('')}
     </div>
 
     <!-- Footer -->

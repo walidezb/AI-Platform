@@ -1,4 +1,10 @@
-import { Processor, Process, OnQueueFailed, OnQueueCompleted, OnQueueStalled } from '@nestjs/bull';
+import {
+  Processor,
+  Process,
+  OnQueueFailed,
+  OnQueueCompleted,
+  OnQueueStalled,
+} from '@nestjs/bull';
 import { Logger } from '@nestjs/common';
 import * as Bull from 'bull';
 import { NotificationsService } from '../../notifications/notifications.service';
@@ -12,13 +18,15 @@ export class NotificationProcessor {
   constructor(private readonly notificationService: NotificationsService) {}
 
   @Process('PATH_READY')
-  async handlePathReady(job: Bull.Job<{
-    userId: string;
-    organizationId: string;
-    pathId: string;
-    pathTitle: string;
-    assessment?: any;
-  }>) {
+  async handlePathReady(
+    job: Bull.Job<{
+      userId: string;
+      organizationId: string;
+      pathId: string;
+      pathTitle: string;
+      assessment?: any;
+    }>,
+  ) {
     this.logger.log(`Processing PATH_READY for user ${job.data.userId}`);
 
     await Promise.all([
@@ -37,14 +45,16 @@ export class NotificationProcessor {
   }
 
   @Process('ASSESSMENT_COMPLETED')
-  async handleAssessmentCompleted(job: Bull.Job<{
-    userId: string;
-    organizationId: string;
-    assessment: any;
-    employeeName: string;
-  }>) {
+  async handleAssessmentCompleted(
+    job: Bull.Job<{
+      userId: string;
+      organizationId: string;
+      assessment: any;
+      employeeName: string;
+    }>,
+  ) {
     this.logger.log(
-      `Processing ASSESSMENT_COMPLETED for ${job.data.employeeName}`
+      `Processing ASSESSMENT_COMPLETED for ${job.data.employeeName}`,
     );
 
     // Get all managers in org for in-app notifications
@@ -53,7 +63,7 @@ export class NotificationProcessor {
         organizationId: job.data.organizationId,
         role: { in: [UserRole.MANAGER, UserRole.ORG_ADMIN] },
       },
-      select: { id: true }
+      select: { id: true },
     });
 
     await Promise.all([
@@ -64,12 +74,12 @@ export class NotificationProcessor {
       ),
 
       // 2. Create in-app notification for each manager
-      ...managers.map(m =>
+      ...managers.map((m) =>
         this.notificationService.createAssessmentCompleteNotification(
           m.id,
           job.data.organizationId,
           job.data.employeeName,
-        )
+        ),
       ),
     ]);
   }

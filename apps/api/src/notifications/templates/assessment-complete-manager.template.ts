@@ -50,12 +50,15 @@ export const assessmentCompleteManagerTemplate = (data: {
             STRENGTHS
           </div>
           <div>
-            ${data.strongAreas.map(s =>
-              `<span style="display:inline-block;background:#10b98110;
+            ${data.strongAreas
+              .map(
+                (s) =>
+                  `<span style="display:inline-block;background:#10b98110;
                            border:1px solid #10b98130;border-radius:12px;
                            padding:3px 10px;color:#34d399;font-size:12px;
-                           margin:2px;">${s}</span>`
-            ).join('')}
+                           margin:2px;">${s}</span>`,
+              )
+              .join('')}
           </div>
         </div>
 
@@ -65,12 +68,15 @@ export const assessmentCompleteManagerTemplate = (data: {
             GROWTH AREAS
           </div>
           <div>
-            ${data.weakAreas.map(w =>
-              `<span style="display:inline-block;background:#f59e0b10;
+            ${data.weakAreas
+              .map(
+                (w) =>
+                  `<span style="display:inline-block;background:#f59e0b10;
                            border:1px solid #f59e0b30;border-radius:12px;
                            padding:3px 10px;color:#fbbf24;font-size:12px;
-                           margin:2px;">${w}</span>`
-            ).join('')}
+                           margin:2px;">${w}</span>`,
+              )
+              .join('')}
           </div>
         </div>
       </div>

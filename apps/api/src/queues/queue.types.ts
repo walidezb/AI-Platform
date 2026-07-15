@@ -40,7 +40,8 @@ export interface ExerciseGenerationPayload {
 }
 
 export interface NotificationPayload {
-  type: 'PATH_READY' | 'MILESTONE_COMPLETE' | 'STALLED_ALERT' | 'BUDGET_WARNING';
+  type:
+    'PATH_READY' | 'MILESTONE_COMPLETE' | 'STALLED_ALERT' | 'BUDGET_WARNING';
   userId: string;
   organizationId: string;
   data: Record<string, unknown>;

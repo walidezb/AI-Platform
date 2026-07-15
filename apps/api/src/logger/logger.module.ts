@@ -10,21 +10,25 @@ import * as winston from 'winston';
           format: winston.format.combine(
             winston.format.timestamp(),
             winston.format.colorize(),
-            winston.format.printf(({ timestamp, level, message, context, ...meta }) => {
-              return `${timestamp} [${level}] ${context ? `[${context}]` : ''} ${message} ${
-                Object.keys(meta).length ? JSON.stringify(meta) : ''
-              }`;
-            })
+            winston.format.printf(
+              ({ timestamp, level, message, context, ...meta }) => {
+                return `${timestamp} [${level}] ${context ? `[${context}]` : ''} ${message} ${
+                  Object.keys(meta).length ? JSON.stringify(meta) : ''
+                }`;
+              },
+            ),
           ),
         }),
         // In production, also log to JSON for log aggregation
         ...(process.env.NODE_ENV === 'production'
-          ? [new winston.transports.Console({
-              format: winston.format.combine(
-                winston.format.timestamp(),
-                winston.format.json()
-              ),
-            })]
+          ? [
+              new winston.transports.Console({
+                format: winston.format.combine(
+                  winston.format.timestamp(),
+                  winston.format.json(),
+                ),
+              }),
+            ]
           : []),
       ],
     }),

@@ -19,7 +19,7 @@ export class InvitationsController {
   async invite(
     @Body() dto: InviteEmployeeDto,
     @CurrentUser() user: Prisma.User,
-    @OrgId() orgId: string
+    @OrgId() orgId: string,
   ) {
     const result = await this.service.inviteEmployee(dto, user.id, orgId);
     return { success: true, data: result };
@@ -31,7 +31,7 @@ export class InvitationsController {
   async bulkInvite(
     @Body() dto: BulkInviteDto,
     @CurrentUser() user: Prisma.User,
-    @OrgId() orgId: string
+    @OrgId() orgId: string,
   ) {
     const result = await this.service.bulkInvite(dto.employees, user.id, orgId);
     return { success: true, data: result };
@@ -63,16 +63,13 @@ export class InvitationsController {
   async getStats(@OrgId() orgId: string) {
     return {
       success: true,
-      data: await this.service.getInvitationStats(orgId)
+      data: await this.service.getInvitationStats(orgId),
     };
   }
 
   @Get(':userId/link')
   @Roles('MANAGER', 'ORG_ADMIN')
-  async getLink(
-    @Param('userId') userId: string,
-    @OrgId() orgId: string
-  ) {
+  async getLink(@Param('userId') userId: string, @OrgId() orgId: string) {
     const link = await this.service.getInviteLink(userId, orgId);
     return { success: true, data: { link } };
   }
@@ -82,7 +79,7 @@ export class InvitationsController {
   async resend(
     @Param('userId') userId: string,
     @CurrentUser() user: Prisma.User,
-    @OrgId() orgId: string
+    @OrgId() orgId: string,
   ) {
     const result = await this.service.resendInvite(userId, user.id, orgId);
     return { success: true, data: result };
@@ -93,7 +90,7 @@ export class InvitationsController {
   async revoke(
     @Param('userId') userId: string,
     @CurrentUser() user: Prisma.User,
-    @OrgId() orgId: string
+    @OrgId() orgId: string,
   ) {
     await this.service.revokeInvite(userId, user.id, orgId);
     return { success: true, message: 'Invitation revoked' };

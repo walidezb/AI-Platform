@@ -1,4 +1,11 @@
-import { Controller, Post, Get, Body, UnauthorizedException, NotFoundException } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Body,
+  UnauthorizedException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Public } from './decorators/public.decorator';
 import { CurrentUser } from './decorators/current-user.decorator';
@@ -65,13 +72,15 @@ export class AuthController {
 
   @Public()
   @Post('sync-learner')
-  async syncLearner(@Body() body: { token: string; clerkId: string; avatarUrl?: string }) {
+  async syncLearner(
+    @Body() body: { token: string; clerkId: string; avatarUrl?: string },
+  ) {
     if (!body.token || !body.clerkId) {
       throw new UnauthorizedException('Missing required fields for sync');
     }
 
     const user = await this.prisma.user.findFirst({
-      where: { onboardingToken: body.token }
+      where: { onboardingToken: body.token },
     });
     if (!user) {
       throw new NotFoundException('Invalid onboarding token');
@@ -84,7 +93,7 @@ export class AuthController {
         avatarUrl: body.avatarUrl || null,
         invitationStatus: 'ACCEPTED',
         onboardingCompletedAt: new Date(),
-      }
+      },
     });
   }
 
@@ -118,7 +127,7 @@ export class AuthController {
               name: user.department.name,
             }
           : null,
-      }
+      },
     };
   }
 }

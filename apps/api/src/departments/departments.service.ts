@@ -1,8 +1,8 @@
-import { 
-  Injectable, 
-  ConflictException, 
-  NotFoundException, 
-  BadRequestException 
+import {
+  Injectable,
+  ConflictException,
+  NotFoundException,
+  BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateDepartmentDto } from './dto/create-department.dto';
@@ -19,14 +19,14 @@ export class DepartmentsService {
   async createDepartment(orgId: string, dto: CreateDepartmentDto) {
     // Check duplicate name in same org
     const existing = await this.prisma.department.findFirst({
-      where: { organizationId: orgId, name: dto.name }
+      where: { organizationId: orgId, name: dto.name },
     });
     if (existing) {
       throw new ConflictException(`Department "${dto.name}" already exists`);
     }
     return this.prisma.department.create({
       data: { ...dto, organizationId: orgId },
-      include: { roleDefinitions: true, _count: { select: { users: true } } }
+      include: { roleDefinitions: true, _count: { select: { users: true } } },
     });
   }
 
@@ -35,11 +35,11 @@ export class DepartmentsService {
       where: { organizationId: orgId },
       include: {
         roleDefinitions: {
-          orderBy: { title: 'asc' }
+          orderBy: { title: 'asc' },
         },
-        _count: { select: { users: true } }
+        _count: { select: { users: true } },
       },
-      orderBy: { name: 'asc' }
+      orderBy: { name: 'asc' },
     });
   }
 
@@ -48,29 +48,25 @@ export class DepartmentsService {
       where: { id, organizationId: orgId },
       include: {
         roleDefinitions: {
-          orderBy: { title: 'asc' }
+          orderBy: { title: 'asc' },
         },
-        _count: { select: { users: true } }
-      }
+        _count: { select: { users: true } },
+      },
     });
     if (!dept) throw new NotFoundException('Department not found');
     return dept;
   }
 
-  async updateDepartment(
-    id: string,
-    orgId: string,
-    dto: UpdateDepartmentDto
-  ) {
+  async updateDepartment(id: string, orgId: string, dto: UpdateDepartmentDto) {
     const dept = await this.prisma.department.findFirst({
-      where: { id, organizationId: orgId }
+      where: { id, organizationId: orgId },
     });
     if (!dept) throw new NotFoundException('Department not found');
 
     // If name changes, check for uniqueness
     if (dto.name && dto.name !== dept.name) {
       const duplicate = await this.prisma.department.findFirst({
-        where: { organizationId: orgId, name: dto.name }
+        where: { organizationId: orgId, name: dto.name },
       });
       if (duplicate) {
         throw new ConflictException(`Department "${dto.name}" already exists`);
@@ -80,20 +76,20 @@ export class DepartmentsService {
     return this.prisma.department.update({
       where: { id },
       data: dto,
-      include: { roleDefinitions: true }
+      include: { roleDefinitions: true },
     });
   }
 
   async deleteDepartment(id: string, orgId: string) {
     const dept = await this.prisma.department.findFirst({
       where: { id, organizationId: orgId },
-      include: { _count: { select: { users: true } } }
+      include: { _count: { select: { users: true } } },
     });
     if (!dept) throw new NotFoundException('Department not found');
     if (dept._count.users > 0) {
       throw new BadRequestException(
         `Cannot delete department with ${dept._count.users} active employee(s). ` +
-        `Reassign them first.`
+          `Reassign them first.`,
       );
     }
     return this.prisma.department.delete({ where: { id } });
@@ -105,14 +101,14 @@ export class DepartmentsService {
     // Validate department belongs to org if provided
     if (dto.departmentId) {
       const dept = await this.prisma.department.findFirst({
-        where: { id: dto.departmentId, organizationId: orgId }
+        where: { id: dto.departmentId, organizationId: orgId },
       });
       if (!dept) throw new NotFoundException('Department not found');
     }
 
     return this.prisma.roleDefinition.create({
       data: { ...dto, organizationId: orgId },
-      include: { department: { select: { name: true } } }
+      include: { department: { select: { name: true } } },
     });
   }
 
@@ -120,29 +116,29 @@ export class DepartmentsService {
     return this.prisma.roleDefinition.findMany({
       where: {
         organizationId: orgId,
-        ...(departmentId ? { departmentId } : {})
+        ...(departmentId ? { departmentId } : {}),
       },
       include: { department: { select: { id: true, name: true } } },
-      orderBy: { title: 'asc' }
+      orderBy: { title: 'asc' },
     });
   }
 
   async updateRole(id: string, orgId: string, dto: UpdateRoleDto) {
     const role = await this.prisma.roleDefinition.findFirst({
-      where: { id, organizationId: orgId }
+      where: { id, organizationId: orgId },
     });
     if (!role) throw new NotFoundException('Role not found');
 
     return this.prisma.roleDefinition.update({
       where: { id },
       data: dto,
-      include: { department: { select: { name: true } } }
+      include: { department: { select: { name: true } } },
     });
   }
 
   async deleteRole(id: string, orgId: string) {
     const role = await this.prisma.roleDefinition.findFirst({
-      where: { id, organizationId: orgId }
+      where: { id, organizationId: orgId },
     });
     if (!role) throw new NotFoundException('Role not found');
     return this.prisma.roleDefinition.delete({ where: { id } });

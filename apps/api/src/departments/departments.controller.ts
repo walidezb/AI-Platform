@@ -1,12 +1,12 @@
-import { 
-  Controller, 
-  Post, 
-  Get, 
-  Patch, 
-  Delete, 
-  Body, 
-  Param, 
-  Query 
+import {
+  Controller,
+  Post,
+  Get,
+  Patch,
+  Delete,
+  Body,
+  Param,
+  Query,
 } from '@nestjs/common';
 import { DepartmentsService } from './departments.service';
 import { CreateDepartmentDto } from './dto/create-department.dto';
@@ -24,13 +24,10 @@ export class DepartmentsController {
 
   @Post()
   @Roles('MANAGER', 'ORG_ADMIN')
-  async create(
-    @Body() dto: CreateDepartmentDto, 
-    @OrgId() orgId: string
-  ) {
+  async create(@Body() dto: CreateDepartmentDto, @OrgId() orgId: string) {
     return {
       success: true,
-      data: await this.service.createDepartment(orgId, dto)
+      data: await this.service.createDepartment(orgId, dto),
     };
   }
 
@@ -39,19 +36,16 @@ export class DepartmentsController {
   async findAll(@OrgId() orgId: string) {
     return {
       success: true,
-      data: await this.service.getDepartments(orgId)
+      data: await this.service.getDepartments(orgId),
     };
   }
 
   @Get(':id')
   @Roles('MANAGER', 'ORG_ADMIN', 'LEARNER')
-  async findOne(
-    @Param('id') id: string,
-    @OrgId() orgId: string
-  ) {
+  async findOne(@Param('id') id: string, @OrgId() orgId: string) {
     return {
       success: true,
-      data: await this.service.getDepartmentById(id, orgId)
+      data: await this.service.getDepartmentById(id, orgId),
     };
   }
 
@@ -60,20 +54,17 @@ export class DepartmentsController {
   async update(
     @Param('id') id: string,
     @Body() dto: UpdateDepartmentDto,
-    @OrgId() orgId: string
+    @OrgId() orgId: string,
   ) {
     return {
       success: true,
-      data: await this.service.updateDepartment(id, orgId, dto)
+      data: await this.service.updateDepartment(id, orgId, dto),
     };
   }
 
   @Delete(':id')
   @Roles('ORG_ADMIN')
-  async remove(
-    @Param('id') id: string,
-    @OrgId() orgId: string
-  ) {
+  async remove(@Param('id') id: string, @OrgId() orgId: string) {
     await this.service.deleteDepartment(id, orgId);
     return { success: true, message: 'Department deleted' };
   }
@@ -82,13 +73,10 @@ export class DepartmentsController {
 
   @Post('roles')
   @Roles('MANAGER', 'ORG_ADMIN')
-  async createRole(
-    @Body() dto: CreateRoleDto, 
-    @OrgId() orgId: string
-  ) {
+  async createRole(@Body() dto: CreateRoleDto, @OrgId() orgId: string) {
     return {
       success: true,
-      data: await this.service.createRole(orgId, dto)
+      data: await this.service.createRole(orgId, dto),
     };
   }
 
@@ -96,11 +84,11 @@ export class DepartmentsController {
   @Roles('MANAGER', 'ORG_ADMIN', 'LEARNER')
   async getRoles(
     @OrgId() orgId: string,
-    @Query('departmentId') departmentId?: string
+    @Query('departmentId') departmentId?: string,
   ) {
     return {
       success: true,
-      data: await this.service.getRoles(orgId, departmentId)
+      data: await this.service.getRoles(orgId, departmentId),
     };
   }
 
@@ -109,20 +97,17 @@ export class DepartmentsController {
   async updateRole(
     @Param('id') id: string,
     @Body() dto: UpdateRoleDto,
-    @OrgId() orgId: string
+    @OrgId() orgId: string,
   ) {
     return {
       success: true,
-      data: await this.service.updateRole(id, orgId, dto)
+      data: await this.service.updateRole(id, orgId, dto),
     };
   }
 
   @Delete('roles/:id')
   @Roles('ORG_ADMIN')
-  async deleteRole(
-    @Param('id') id: string,
-    @OrgId() orgId: string
-  ) {
+  async deleteRole(@Param('id') id: string, @OrgId() orgId: string) {
     await this.service.deleteRole(id, orgId);
     return { success: true, message: 'Role deleted' };
   }

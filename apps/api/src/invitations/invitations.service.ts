@@ -1,8 +1,8 @@
-import { 
-  Injectable, 
-  ConflictException, 
-  NotFoundException, 
-  BadRequestException 
+import {
+  Injectable,
+  ConflictException,
+  NotFoundException,
+  BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { EmailService } from '../email/email.service';
@@ -24,19 +24,20 @@ export class InvitationsService {
   }
 
   private buildInviteUrl(token: string): string {
-    const appUrl = this.config.get<string>('APP_URL') || 'http://localhost:3000';
+    const appUrl =
+      this.config.get<string>('APP_URL') || 'http://localhost:3000';
     return `${appUrl}/onboarding/${token}`;
   }
 
   async inviteEmployee(
     dto: InviteEmployeeDto,
     managerId: string,
-    orgId: string
+    orgId: string,
   ) {
     // Get manager info for email
     const manager = await this.prisma.user.findUnique({
       where: { id: managerId },
-      include: { organization: true }
+      include: { organization: true },
     });
 
     if (!manager) {
@@ -45,11 +46,13 @@ export class InvitationsService {
 
     // Check if email already invited in this org
     const existing = await this.prisma.user.findFirst({
-      where: { email: dto.email, organizationId: orgId }
+      where: { email: dto.email, organizationId: orgId },
     });
 
     if (existing && existing.invitationStatus === 'ACCEPTED') {
-      throw new ConflictException('This employee has already joined the platform');
+      throw new ConflictException(
+        'This employee has already joined the platform',
+      );
     }
 
     const token = this.generateToken();
@@ -67,7 +70,7 @@ export class InvitationsService {
           fullName: dto.fullName,
           departmentId: dto.departmentId || null,
           jobTitle: dto.jobTitle || null,
-        }
+        },
       });
     } else {
       // New invite
@@ -83,21 +86,23 @@ export class InvitationsService {
           onboardingToken: token,
           onboardingTokenExpiry: expiry,
           invitationStatus: 'PENDING',
-        }
+        },
       });
     }
 
     const inviteLink = this.buildInviteUrl(token);
 
     // Send email (don't await — fire and forget)
-    this.email.sendInviteEmail({
-      to: dto.email,
-      employeeName: dto.fullName,
-      managerName: manager.fullName,
-      orgName: manager.organization.name,
-      inviteLink,
-      jobTitle: dto.jobTitle || undefined,
-    }).catch(err => console.error('Email send failed:', err));
+    this.email
+      .sendInviteEmail({
+        to: dto.email,
+        employeeName: dto.fullName,
+        managerName: manager.fullName,
+        orgName: manager.organization.name,
+        inviteLink,
+        jobTitle: dto.jobTitle || undefined,
+      })
+      .catch((err) => console.error('Email send failed:', err));
 
     return { userId: user.id, inviteLink, token };
   }
@@ -105,14 +110,14 @@ export class InvitationsService {
   async bulkInvite(
     employees: InviteEmployeeDto[],
     managerId: string,
-    orgId: string
+    orgId: string,
   ) {
     const results = await Promise.allSettled(
-      employees.map(emp => this.inviteEmployee(emp, managerId, orgId))
+      employees.map((emp) => this.inviteEmployee(emp, managerId, orgId)),
     );
 
-    const succeeded = results.filter(r => r.status === 'fulfilled').length;
-    const failed = results.filter(r => r.status === 'rejected').length;
+    const succeeded = results.filter((r) => r.status === 'fulfilled').length;
+    const failed = results.filter((r) => r.status === 'rejected').length;
 
     return { succeeded, failed, total: employees.length };
   }
@@ -126,10 +131,11 @@ export class InvitationsService {
       include: {
         organization: { select: { name: true, logoUrl: true, industry: true } },
         department: { select: { name: true } },
-      }
+      },
     });
 
-    if (!user) return { valid: false, reason: 'Token is invalid or has expired' };
+    if (!user)
+      return { valid: false, reason: 'Token is invalid or has expired' };
     if (user.invitationStatus === 'REVOKED') {
       return { valid: false, reason: 'This invitation has been revoked' };
     }
@@ -152,7 +158,7 @@ export class InvitationsService {
 
   async revokeInvite(userId: string, managerId: string, orgId: string) {
     const user = await this.prisma.user.findFirst({
-      where: { id: userId, organizationId: orgId }
+      where: { id: userId, organizationId: orgId },
     });
     if (!user) throw new NotFoundException('Employee not found');
 
@@ -162,17 +168,19 @@ export class InvitationsService {
         invitationStatus: 'REVOKED',
         onboardingToken: null,
         onboardingTokenExpiry: null,
-      }
+      },
     });
   }
 
   async resendInvite(userId: string, managerId: string, orgId: string) {
     const user = await this.prisma.user.findFirst({
-      where: { id: userId, organizationId: orgId }
+      where: { id: userId, organizationId: orgId },
     });
     if (!user) throw new NotFoundException('Employee not found');
     if (user.invitationStatus === 'ACCEPTED') {
-      throw new BadRequestException('Employee has already accepted the invitation');
+      throw new BadRequestException(
+        'Employee has already accepted the invitation',
+      );
     }
 
     const dto: InviteEmployeeDto = {
@@ -194,9 +202,10 @@ export class InvitationsService {
 
   async getInviteLink(userId: string, orgId: string): Promise<string> {
     const user = await this.prisma.user.findFirst({
-      where: { id: userId, organizationId: orgId }
+      where: { id: userId, organizationId: orgId },
     });
-    if (!user?.onboardingToken) throw new NotFoundException('No active invite link');
+    if (!user?.onboardingToken)
+      throw new NotFoundException('No active invite link');
     return this.buildInviteUrl(user.onboardingToken);
   }
 
@@ -205,14 +214,14 @@ export class InvitationsService {
       where: {
         onboardingToken: token,
         onboardingTokenExpiry: { gte: new Date() },
-      }
+      },
     });
     if (!user) return null;
 
     if (user.invitationStatus === 'PENDING') {
       await this.prisma.user.update({
         where: { id: user.id },
-        data: { invitationStatus: 'IN_PROGRESS' }
+        data: { invitationStatus: 'IN_PROGRESS' },
       });
     }
     return user;
@@ -220,11 +229,37 @@ export class InvitationsService {
 
   async getInvitationStats(orgId: string) {
     const [total, pending, inProgress, accepted, revoked] = await Promise.all([
-      this.prisma.user.count({ where: { organizationId: orgId, role: 'LEARNER' } }),
-      this.prisma.user.count({ where: { organizationId: orgId, role: 'LEARNER', invitationStatus: 'PENDING' } }),
-      this.prisma.user.count({ where: { organizationId: orgId, role: 'LEARNER', invitationStatus: 'IN_PROGRESS' } }),
-      this.prisma.user.count({ where: { organizationId: orgId, role: 'LEARNER', invitationStatus: 'ACCEPTED' } }),
-      this.prisma.user.count({ where: { organizationId: orgId, role: 'LEARNER', invitationStatus: 'REVOKED' } }),
+      this.prisma.user.count({
+        where: { organizationId: orgId, role: 'LEARNER' },
+      }),
+      this.prisma.user.count({
+        where: {
+          organizationId: orgId,
+          role: 'LEARNER',
+          invitationStatus: 'PENDING',
+        },
+      }),
+      this.prisma.user.count({
+        where: {
+          organizationId: orgId,
+          role: 'LEARNER',
+          invitationStatus: 'IN_PROGRESS',
+        },
+      }),
+      this.prisma.user.count({
+        where: {
+          organizationId: orgId,
+          role: 'LEARNER',
+          invitationStatus: 'ACCEPTED',
+        },
+      }),
+      this.prisma.user.count({
+        where: {
+          organizationId: orgId,
+          role: 'LEARNER',
+          invitationStatus: 'REVOKED',
+        },
+      }),
     ]);
 
     const expired = await this.prisma.user.count({
@@ -233,7 +268,7 @@ export class InvitationsService {
         role: 'LEARNER',
         invitationStatus: 'PENDING',
         onboardingTokenExpiry: { lt: new Date() },
-      }
+      },
     });
 
     return { total, pending, inProgress, accepted, revoked, expired };

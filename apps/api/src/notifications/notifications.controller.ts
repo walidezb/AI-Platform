@@ -30,10 +30,7 @@ export class NotificationsController {
 
   @Patch(':id/read')
   @Roles(UserRole.LEARNER, UserRole.MANAGER, UserRole.ORG_ADMIN)
-  async markRead(
-    @Param('id') id: string,
-    @CurrentUser() user: any,
-  ) {
+  async markRead(@Param('id') id: string, @CurrentUser() user: any) {
     await this.service.markAsRead(id, user.id);
     return { success: true };
   }

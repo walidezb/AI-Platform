@@ -19,9 +19,10 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const request = ctx.getRequest<Request>();
 
     // Determine status code
-    const status = exception instanceof HttpException
-      ? exception.getStatus()
-      : HttpStatus.INTERNAL_SERVER_ERROR;
+    const status =
+      exception instanceof HttpException
+        ? exception.getStatus()
+        : HttpStatus.INTERNAL_SERVER_ERROR;
 
     // Log and capture non-4xx errors
     if (status >= 500) {
@@ -30,17 +31,19 @@ export class AllExceptionsFilter implements ExceptionFilter {
     }
 
     // Sanitized response
-    const rawResponse = exception instanceof HttpException
-      ? exception.getResponse()
-      : { message: 'Internal server error' };
+    const rawResponse =
+      exception instanceof HttpException
+        ? exception.getResponse()
+        : { message: 'Internal server error' };
 
-    const errorResponseObj = typeof rawResponse === 'string'
-      ? { message: rawResponse }
-      : (rawResponse as Record<string, unknown>);
+    const errorResponseObj =
+      typeof rawResponse === 'string'
+        ? { message: rawResponse }
+        : (rawResponse as Record<string, unknown>);
 
     const formattedMessage = Array.isArray(errorResponseObj.message)
       ? errorResponseObj.message.join(', ')
-      : (errorResponseObj.message || 'Something went wrong');
+      : errorResponseObj.message || 'Something went wrong';
 
     response.status(status).json({
       success: false,

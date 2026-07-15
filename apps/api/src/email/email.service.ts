@@ -12,7 +12,9 @@ export class EmailService {
     if (apiKey) {
       sgMail.setApiKey(apiKey);
     } else {
-      this.logger.warn('SENDGRID_API_KEY is not configured. Email sending will fail.');
+      this.logger.warn(
+        'SENDGRID_API_KEY is not configured. Email sending will fail.',
+      );
     }
   }
 
@@ -24,7 +26,8 @@ export class EmailService {
     inviteLink: string;
     jobTitle?: string;
   }) {
-    const { to, employeeName, managerName, orgName, inviteLink, jobTitle } = params;
+    const { to, employeeName, managerName, orgName, inviteLink, jobTitle } =
+      params;
 
     const html = `
     <!DOCTYPE html>
@@ -63,13 +66,17 @@ export class EmailService {
             to begin your personalized AI-powered learning journey on EZ LEARN.
           </p>
 
-          ${jobTitle ? `
+          ${
+            jobTitle
+              ? `
           <div style="background:#171e30;border-radius:8px;padding:12px 16px;
                       margin-bottom:24px;border-left:3px solid #4A90D9;">
             <p style="color:#7a8499;font-size:12px;margin:0 0 2px;
                        text-transform:uppercase;letter-spacing:0.05em;">Your Role</p>
             <p style="color:#dce3f0;font-size:15px;font-weight:500;margin:0;">${jobTitle}</p>
-          </div>` : ''}
+          </div>`
+              : ''
+          }
 
           <!-- What to expect -->
           <p style="color:#7a8499;font-size:13px;font-weight:600;
@@ -78,17 +85,33 @@ export class EmailService {
           </p>
           <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:32px;">
             ${[
-              ['🤖', 'AI Skills Assessment', 'A 10-minute chat to understand your current skills'],
-              ['🗺️', 'Personalized Learning Path', 'A custom curriculum built just for your role'],
-              ['📈', 'Track Your Progress', 'Learn at your pace with milestone-based goals'],
-            ].map(([icon, title, desc]) => `
+              [
+                '🤖',
+                'AI Skills Assessment',
+                'A 10-minute chat to understand your current skills',
+              ],
+              [
+                '🗺️',
+                'Personalized Learning Path',
+                'A custom curriculum built just for your role',
+              ],
+              [
+                '📈',
+                'Track Your Progress',
+                'Learn at your pace with milestone-based goals',
+              ],
+            ]
+              .map(
+                ([icon, title, desc]) => `
             <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:12px;">
               <span style="font-size:20px;margin-top:2px;line-height:1;">${icon}</span>
               <div>
                 <p style="color:#dce3f0;font-size:14px;font-weight:600;margin:0;">${title}</p>
                 <p style="color:#7a8499;font-size:13px;margin:0;line-height:1.4;">${desc}</p>
               </div>
-            </div>`).join('')}
+            </div>`,
+              )
+              .join('')}
           </div>
 
           <!-- CTA Button -->
@@ -116,7 +139,8 @@ export class EmailService {
     </body>
     </html>`;
 
-    const fromEmail = this.config.get<string>('SENDGRID_FROM_EMAIL') || 'no-reply@ezlearn.ai';
+    const fromEmail =
+      this.config.get<string>('SENDGRID_FROM_EMAIL') || 'no-reply@ezlearn.ai';
 
     try {
       await sgMail.send({

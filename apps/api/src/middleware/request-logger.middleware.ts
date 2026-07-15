@@ -14,7 +14,7 @@ export class RequestLoggerMiddleware implements NestMiddleware {
       const { statusCode } = res;
       const color = statusCode >= 500 ? '🔴' : statusCode >= 400 ? '🟡' : '🟢';
       this.logger.log(
-        `${color} ${method} ${originalUrl} ${statusCode} — ${duration}ms`
+        `${color} ${method} ${originalUrl} ${statusCode} — ${duration}ms`,
       );
     });
 

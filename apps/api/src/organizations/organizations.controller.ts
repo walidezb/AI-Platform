@@ -25,7 +25,10 @@ export class OrganizationsController {
   @Public()
   async create(@Body() dto: CreateOrgDto) {
     const { org, user } = await this.service.createOrganization(dto);
-    return { success: true, data: { orgId: org.id, userId: user.id, slug: org.slug } };
+    return {
+      success: true,
+      data: { orgId: org.id, userId: user.id, slug: org.slug },
+    };
   }
 
   @Get('slug-check/:slug')
@@ -38,9 +41,9 @@ export class OrganizationsController {
   @Get(':id')
   @Roles('MANAGER', 'ORG_ADMIN', 'PLATFORM_ADMIN')
   async findOne(
-    @Param('id') id: string, 
+    @Param('id') id: string,
     @CurrentUser() user: Prisma.User,
-    @OrgId() orgId: string
+    @OrgId() orgId: string,
   ) {
     // Ensure user belongs to this org, or is PLATFORM_ADMIN
     if (user.role !== 'PLATFORM_ADMIN' && orgId !== id) {
@@ -52,9 +55,9 @@ export class OrganizationsController {
   @Get(':id/stats')
   @Roles('MANAGER', 'ORG_ADMIN', 'PLATFORM_ADMIN')
   async getStats(
-    @Param('id') id: string, 
+    @Param('id') id: string,
     @CurrentUser() user: Prisma.User,
-    @OrgId() orgId: string
+    @OrgId() orgId: string,
   ) {
     if (user.role !== 'PLATFORM_ADMIN' && orgId !== id) {
       throw new ForbiddenException();
@@ -65,9 +68,9 @@ export class OrganizationsController {
   @Get(':id/profile')
   @Roles('MANAGER', 'ORG_ADMIN')
   async getProfile(
-    @Param('id') id: string, 
+    @Param('id') id: string,
     @CurrentUser() user: Prisma.User,
-    @OrgId() orgId: string
+    @OrgId() orgId: string,
   ) {
     if (user.role !== 'PLATFORM_ADMIN' && orgId !== id) {
       throw new ForbiddenException();
@@ -81,11 +84,14 @@ export class OrganizationsController {
     @Param('id') id: string,
     @Body() dto: UpdateOrgDto,
     @CurrentUser() user: Prisma.User,
-    @OrgId() orgId: string
+    @OrgId() orgId: string,
   ) {
     if (user.role !== 'PLATFORM_ADMIN' && orgId !== id) {
       throw new ForbiddenException();
     }
-    return { success: true, data: await this.service.updateOrgSettings(id, dto) };
+    return {
+      success: true,
+      data: await this.service.updateOrgSettings(id, dto),
+    };
   }
 }

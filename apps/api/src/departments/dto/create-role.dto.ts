@@ -1,4 +1,12 @@
-import { IsString, MinLength, MaxLength, IsOptional, IsArray, ArrayMinSize, ArrayMaxSize } from 'class-validator';
+import {
+  IsString,
+  MinLength,
+  MaxLength,
+  IsOptional,
+  IsArray,
+  ArrayMinSize,
+  ArrayMaxSize,
+} from 'class-validator';
 
 export class CreateRoleDto {
   @IsString()

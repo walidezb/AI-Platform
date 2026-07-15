@@ -1,4 +1,12 @@
-import { IsString, IsOptional, IsEnum, MinLength, MaxLength, IsUrl, IsIn } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsEnum,
+  MinLength,
+  MaxLength,
+  IsUrl,
+  IsIn,
+} from 'class-validator';
 import { Language } from '@prisma/client';
 
 export class UpdateOrgDto {
@@ -19,9 +27,18 @@ export class UpdateOrgDto {
   @IsOptional()
   @IsString()
   @IsIn([
-    'Asia/Dubai', 'Asia/Riyadh', 'Africa/Cairo', 'Asia/Kuwait', 'Asia/Bahrain',
-    'Europe/London', 'Europe/Paris', 'America/New_York',
-    'America/Los_Angeles', 'Asia/Tokyo', 'Australia/Sydney', 'UTC'
+    'Asia/Dubai',
+    'Asia/Riyadh',
+    'Africa/Cairo',
+    'Asia/Kuwait',
+    'Asia/Bahrain',
+    'Europe/London',
+    'Europe/Paris',
+    'America/New_York',
+    'America/Los_Angeles',
+    'Asia/Tokyo',
+    'Australia/Sydney',
+    'UTC',
   ])
   timezone?: string;
 

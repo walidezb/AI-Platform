@@ -1,4 +1,10 @@
-import { Processor, Process, OnQueueFailed, OnQueueCompleted, OnQueueStalled } from '@nestjs/bull';
+import {
+  Processor,
+  Process,
+  OnQueueFailed,
+  OnQueueCompleted,
+  OnQueueStalled,
+} from '@nestjs/bull';
 import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as Bull from 'bull';
@@ -14,7 +20,7 @@ export class AssessmentProcessor {
   @Process(JOB_NAMES.ASSESSMENT_COMPLETED)
   async handleAssessmentCompleted(job: Bull.Job<AssessmentCompletedPayload>) {
     this.logger.log(
-      `Processing assessment ${job.data.assessmentId} for user ${job.data.userId}`
+      `Processing assessment ${job.data.assessmentId} for user ${job.data.userId}`,
     );
 
     // Trigger path generation in AI service
@@ -43,11 +49,11 @@ export class AssessmentProcessor {
       const result: any = await res.json();
       this.logger.log(
         `Path generation triggered: ${result.pathTitle} ` +
-        `(${result.milestoneCount} milestones, ${result.estimatedHours}h)`
+          `(${result.milestoneCount} milestones, ${result.estimatedHours}h)`,
       );
     } catch (error: any) {
       this.logger.error(`Path generation failed: ${error.message}`);
-      throw error;  // BullMQ will retry
+      throw error; // BullMQ will retry
     }
   }
 

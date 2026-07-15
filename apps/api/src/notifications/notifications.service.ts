@@ -19,13 +19,17 @@ export class NotificationsService {
     if (apiKey && apiKey !== 'SG....' && !apiKey.startsWith('SG.')) {
       sgMail.setApiKey(apiKey);
     } else {
-      this.logger.warn('SendGrid API key not set or placeholder used — email delivery disabled');
+      this.logger.warn(
+        'SendGrid API key not set or placeholder used — email delivery disabled',
+      );
     }
     this.sgMail = sgMail;
   }
 
   private get fromEmail() {
-    return this.config.get<string>('SENDGRID_FROM_EMAIL') || 'noreply@learnpath.ai';
+    return (
+      this.config.get<string>('SENDGRID_FROM_EMAIL') || 'noreply@learnpath.ai'
+    );
   }
 
   private get appUrl() {
@@ -48,9 +52,9 @@ export class NotificationsService {
             title: true,
             totalMilestones: true,
             estimatedHours: true,
-          }
-        }
-      }
+          },
+        },
+      },
     });
 
     if (!user?.email) return;
@@ -78,7 +82,9 @@ export class NotificationsService {
         });
         this.logger.log(`Path ready email sent to ${user.email}`);
       } else {
-        this.logger.log(`Mock: Email to ${user.email} (Path Ready) skipped due to missing API key`);
+        this.logger.log(
+          `Mock: Email to ${user.email} (Path Ready) skipped due to missing API key`,
+        );
       }
     } catch (error: any) {
       this.logger.error(`Email send failed: ${error.message}`);
@@ -86,10 +92,7 @@ export class NotificationsService {
     }
   }
 
-  async sendAssessmentCompleteToManager(
-    employeeId: string,
-    assessment: any,
-  ) {
+  async sendAssessmentCompleteToManager(employeeId: string, assessment: any) {
     // Find the employee's manager
     const employee = await this.prisma.user.findUnique({
       where: { id: employeeId },
@@ -98,11 +101,11 @@ export class NotificationsService {
           include: {
             users: {
               where: { role: { in: [UserRole.MANAGER, UserRole.ORG_ADMIN] } },
-              select: { id: true, email: true, fullName: true }
-            }
-          }
-        }
-      }
+              select: { id: true, email: true, fullName: true },
+            },
+          },
+        },
+      },
     });
 
     if (!employee) return;
@@ -117,7 +120,8 @@ export class NotificationsService {
       const template = assessmentCompleteManagerTemplate({
         managerName: manager.fullName.split(' ')[0],
         employeeName: employee.fullName,
-        employeeRole: assessment.identifiedRole || employee.jobTitle || 'Employee',
+        employeeRole:
+          assessment.identifiedRole || employee.jobTitle || 'Employee',
         experienceLevel: assessment.experienceLevel || 'INTERMEDIATE',
         strongAreas: assessment.strongAreas || [],
         weakAreas: assessment.weakAreas || [],
@@ -135,10 +139,12 @@ export class NotificationsService {
             html: template.html,
           });
           this.logger.log(
-            `Assessment complete email sent to manager ${manager.email}`
+            `Assessment complete email sent to manager ${manager.email}`,
           );
         } else {
-          this.logger.log(`Mock: Email to manager ${manager.email} (Assessment Complete) skipped due to missing API key`);
+          this.logger.log(
+            `Mock: Email to manager ${manager.email} (Assessment Complete) skipped due to missing API key`,
+          );
         }
       } catch (error: any) {
         this.logger.error(`Manager email failed: ${error.message}`);
@@ -160,7 +166,11 @@ export class NotificationsService {
     return this.prisma.notification.create({ data });
   }
 
-  async createPathReadyNotification(userId: string, orgId: string, pathTitle: string) {
+  async createPathReadyNotification(
+    userId: string,
+    orgId: string,
+    pathTitle: string,
+  ) {
     return this.createNotification({
       userId,
       organizationId: orgId,

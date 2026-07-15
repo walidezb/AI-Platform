@@ -53,7 +53,11 @@ describe('Multi-tenant isolation (e2e)', () => {
         const { id, organizationId } = args.where;
         // Simulate department A belonging to Org A
         if (id === 'dept-a-id' && organizationId === 'org-a-id') {
-          return { id: 'dept-a-id', name: 'Engineering', organizationId: 'org-a-id' };
+          return {
+            id: 'dept-a-id',
+            name: 'Engineering',
+            organizationId: 'org-a-id',
+          };
         }
         return null;
       }),

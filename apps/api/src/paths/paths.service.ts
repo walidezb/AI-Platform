@@ -1,4 +1,9 @@
-import { Injectable, Logger, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 export interface GeneratedPathDto {
@@ -117,7 +122,7 @@ export class PathsService {
                 resourceType: resource.resourceType,
                 durationMinutes: resource.durationMinutes || null,
                 qualityScore: resource.qualityScore,
-                language: (resource.language === 'AR' ? 'AR' : 'EN'),
+                language: resource.language === 'AR' ? 'AR' : 'EN',
                 sequenceOrder: rIdx + 1,
               },
             });

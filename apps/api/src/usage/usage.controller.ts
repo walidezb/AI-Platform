@@ -44,10 +44,7 @@ export class UsageController {
   // Manager/admin can view org usage
   @Get('usage/org')
   @Roles(UserRole.ORG_ADMIN, UserRole.MANAGER, UserRole.PLATFORM_ADMIN)
-  async getOrgUsage(
-    @CurrentUser() user: any,
-    @Query('days') days?: string,
-  ) {
+  async getOrgUsage(@CurrentUser() user: any, @Query('days') days?: string) {
     return {
       success: true,
       data: await this.service.getOrgUsage(

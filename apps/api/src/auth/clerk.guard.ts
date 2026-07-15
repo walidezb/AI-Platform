@@ -1,9 +1,9 @@
-import { 
-  CanActivate, 
-  ExecutionContext, 
-  Injectable, 
-  UnauthorizedException, 
-  ForbiddenException 
+import {
+  CanActivate,
+  ExecutionContext,
+  Injectable,
+  UnauthorizedException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { verifyToken } from '@clerk/backend';
@@ -13,7 +13,13 @@ import * as Prisma from '@prisma/client';
 @Injectable()
 export class ClerkGuard implements CanActivate {
   // Local memory cache Map to store verified tokens for 60 seconds
-  private tokenCache = new Map<string, { user: Prisma.User & { organization: any | null; department: any | null }; expiresAt: number }>();
+  private tokenCache = new Map<
+    string,
+    {
+      user: Prisma.User & { organization: any | null; department: any | null };
+      expiresAt: number;
+    }
+  >();
 
   constructor(
     private reflector: Reflector,
@@ -32,13 +38,41 @@ export class ClerkGuard implements CanActivate {
     const mockRole = request.headers['x-mock-user'];
     if (process.env.NODE_ENV === 'test' && mockRole) {
       if (mockRole === 'learner') {
-        request.user = { id: 'learner-1', clerkId: 'clerk-learner', email: 'learner@org-a.com', fullName: 'Learner A', role: 'LEARNER', organizationId: 'org-a-id' } as any;
+        request.user = {
+          id: 'learner-1',
+          clerkId: 'clerk-learner',
+          email: 'learner@org-a.com',
+          fullName: 'Learner A',
+          role: 'LEARNER',
+          organizationId: 'org-a-id',
+        } as any;
       } else if (mockRole === 'manager') {
-        request.user = { id: 'manager-1', clerkId: 'clerk-manager', email: 'manager@org-a.com', fullName: 'Manager A', role: 'MANAGER', organizationId: 'org-a-id' } as any;
+        request.user = {
+          id: 'manager-1',
+          clerkId: 'clerk-manager',
+          email: 'manager@org-a.com',
+          fullName: 'Manager A',
+          role: 'MANAGER',
+          organizationId: 'org-a-id',
+        } as any;
       } else if (mockRole === 'org_b_manager') {
-        request.user = { id: 'manager-2', clerkId: 'clerk-org-b-manager', email: 'manager@org-b.com', fullName: 'Manager B', role: 'MANAGER', organizationId: 'org-b-id' } as any;
+        request.user = {
+          id: 'manager-2',
+          clerkId: 'clerk-org-b-manager',
+          email: 'manager@org-b.com',
+          fullName: 'Manager B',
+          role: 'MANAGER',
+          organizationId: 'org-b-id',
+        } as any;
       } else if (mockRole === 'platform_admin') {
-        request.user = { id: 'platform-admin-1', clerkId: 'clerk-platform-admin', email: 'admin@platform.com', fullName: 'Platform Admin', role: 'PLATFORM_ADMIN', organizationId: 'org-admin-id' } as any;
+        request.user = {
+          id: 'platform-admin-1',
+          clerkId: 'clerk-platform-admin',
+          email: 'admin@platform.com',
+          fullName: 'Platform Admin',
+          role: 'PLATFORM_ADMIN',
+          organizationId: 'org-admin-id',
+        } as any;
       }
       return true;
     }
@@ -49,8 +83,16 @@ export class ClerkGuard implements CanActivate {
     const configuredSecret = process.env.INTERNAL_SERVICE_SECRET;
 
     if (path.includes('/internal/')) {
-      if (internalSecret && configuredSecret && internalSecret === configuredSecret) {
-        request.user = { id: 'internal', role: 'PLATFORM_ADMIN', organizationId: null } as any;
+      if (
+        internalSecret &&
+        configuredSecret &&
+        internalSecret === configuredSecret
+      ) {
+        request.user = {
+          id: 'internal',
+          role: 'PLATFORM_ADMIN',
+          organizationId: null,
+        } as any;
         return true;
       }
       throw new UnauthorizedException({
@@ -59,8 +101,16 @@ export class ClerkGuard implements CanActivate {
       });
     }
 
-    if (internalSecret && configuredSecret && internalSecret === configuredSecret) {
-      request.user = { id: 'internal', role: 'PLATFORM_ADMIN', organizationId: null } as any;
+    if (
+      internalSecret &&
+      configuredSecret &&
+      internalSecret === configuredSecret
+    ) {
+      request.user = {
+        id: 'internal',
+        role: 'PLATFORM_ADMIN',
+        organizationId: null,
+      } as any;
       return true;
     }
 
@@ -147,7 +197,10 @@ export class ClerkGuard implements CanActivate {
         return true;
       }
       // If it's already a ForbiddenException or UnauthorizedException from above, rethrow it
-      if (err instanceof ForbiddenException || err instanceof UnauthorizedException) {
+      if (
+        err instanceof ForbiddenException ||
+        err instanceof UnauthorizedException
+      ) {
         throw err;
       }
       throw new UnauthorizedException({

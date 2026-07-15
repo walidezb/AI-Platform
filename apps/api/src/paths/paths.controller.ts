@@ -79,9 +79,9 @@ export class PathsController {
       where: { userId: user.id },
       include: {
         learningPath: {
-          select: { title: true, totalMilestones: true, estimatedHours: true }
-        }
-      }
+          select: { title: true, totalMilestones: true, estimatedHours: true },
+        },
+      },
     });
     return { success: true, data: progress };
   }
@@ -126,19 +126,21 @@ export class PathsController {
         learningPath: {
           include: {
             user: { select: { jobTitle: true, preferredLanguage: true } },
-            assessment: { select: { experienceLevel: true } }
-          }
+            assessment: { select: { experienceLevel: true } },
+          },
         },
         modules: { select: { title: true, moduleType: true } },
         exercises: true,
-      }
+      },
     });
 
     if (!milestone) throw new NotFoundException();
 
     // Verify org access
-    if (milestone.learningPath.organizationId !== user.organizationId
-        && user.role !== UserRole.PLATFORM_ADMIN) {
+    if (
+      milestone.learningPath.organizationId !== user.organizationId &&
+      user.role !== UserRole.PLATFORM_ADMIN
+    ) {
       throw new ForbiddenException();
     }
 
@@ -153,7 +155,8 @@ export class PathsController {
         learningObjectives: milestone.learningObjectives,
         modules: milestone.modules,
         domain: milestone.learningPath.domain,
-        experienceLevel: milestone.learningPath.assessment?.experienceLevel || 'INTERMEDIATE',
+        experienceLevel:
+          milestone.learningPath.assessment?.experienceLevel || 'INTERMEDIATE',
         jobRole: milestone.learningPath.user.jobTitle || 'Professional',
         exerciseCount: 2,
       }),
@@ -181,7 +184,7 @@ export class PathsController {
           passingScore: ex.passingScore,
           maxAttempts: ex.maxAttempts,
           tags: ex.tags,
-        }))
+        })),
       }),
     ]);
 

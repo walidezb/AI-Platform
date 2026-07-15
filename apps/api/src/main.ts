@@ -26,26 +26,28 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   // Apply Helmet Security Headers
-  app.use(helmet({
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'self'"],
-        scriptSrc: ["'self'"],
-        styleSrc: ["'self'", "'unsafe-inline'"],
-        imgSrc: ["'self'", 'data:', 'https:'],
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          scriptSrc: ["'self'"],
+          styleSrc: ["'self'", "'unsafe-inline'"],
+          imgSrc: ["'self'", 'data:', 'https:'],
+        },
       },
-    },
-    crossOriginEmbedderPolicy: false, // needed for embedded videos
-  }));
+      crossOriginEmbedderPolicy: false, // needed for embedded videos
+    }),
+  );
 
   // CORS Configuration
   app.enableCors({
     origin: (origin, callback) => {
       const allowedOrigins = [
-        process.env.APP_URL,              // Next.js frontend
-        process.env.AI_SERVICE_URL,       // FastAPI AI service
-        'http://localhost:3000',           // local dev
-        'http://localhost:8000',           // local AI dev
+        process.env.APP_URL, // Next.js frontend
+        process.env.AI_SERVICE_URL, // FastAPI AI service
+        'http://localhost:3000', // local dev
+        'http://localhost:8000', // local AI dev
       ].filter(Boolean);
 
       // Allow requests with no origin (mobile apps, Postman, internal)
@@ -66,25 +68,27 @@ async function bootstrap() {
   });
 
   // Strict Global Validation Pipe
-  app.useGlobalPipes(new ValidationPipe({
-    whitelist: true,              // strip unknown properties
-    forbidNonWhitelisted: true,   // throw error on unknown properties
-    transform: true,              // auto-transform types (string -> number etc)
-    transformOptions: {
-      enableImplicitConversion: true,
-    },
-    exceptionFactory: (errors) => {
-      // Format validation errors into a clean structure
-      const messages = errors.map(err => ({
-        field: err.property,
-        errors: Object.values(err.constraints || {}),
-      }));
-      return new BadRequestException({
-        message: 'Validation failed',
-        errors: messages,
-      });
-    },
-  }));
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true, // strip unknown properties
+      forbidNonWhitelisted: true, // throw error on unknown properties
+      transform: true, // auto-transform types (string -> number etc)
+      transformOptions: {
+        enableImplicitConversion: true,
+      },
+      exceptionFactory: (errors) => {
+        // Format validation errors into a clean structure
+        const messages = errors.map((err) => ({
+          field: err.property,
+          errors: Object.values(err.constraints || {}),
+        }));
+        return new BadRequestException({
+          message: 'Validation failed',
+          errors: messages,
+        });
+      },
+    }),
+  );
 
   // Register Sentry Exception Filter
   app.useGlobalFilters(new AllExceptionsFilter());
@@ -93,11 +97,21 @@ async function bootstrap() {
   const serverAdapter = new ExpressAdapter();
   serverAdapter.setBasePath('/admin/queues');
 
-  const assessmentQueue = app.get<Bull.Queue>(getQueueToken(QUEUE_NAMES.ASSESSMENT));
-  const pathQueue = app.get<Bull.Queue>(getQueueToken(QUEUE_NAMES.PATH_GENERATION));
-  const resourceQueue = app.get<Bull.Queue>(getQueueToken(QUEUE_NAMES.RESOURCE_CURATION));
-  const exerciseQueue = app.get<Bull.Queue>(getQueueToken(QUEUE_NAMES.EXERCISE_GENERATION));
-  const notificationQueue = app.get<Bull.Queue>(getQueueToken(QUEUE_NAMES.NOTIFICATION));
+  const assessmentQueue = app.get<Bull.Queue>(
+    getQueueToken(QUEUE_NAMES.ASSESSMENT),
+  );
+  const pathQueue = app.get<Bull.Queue>(
+    getQueueToken(QUEUE_NAMES.PATH_GENERATION),
+  );
+  const resourceQueue = app.get<Bull.Queue>(
+    getQueueToken(QUEUE_NAMES.RESOURCE_CURATION),
+  );
+  const exerciseQueue = app.get<Bull.Queue>(
+    getQueueToken(QUEUE_NAMES.EXERCISE_GENERATION),
+  );
+  const notificationQueue = app.get<Bull.Queue>(
+    getQueueToken(QUEUE_NAMES.NOTIFICATION),
+  );
 
   createBullBoard({
     queues: [
@@ -114,4 +128,4 @@ async function bootstrap() {
 
   await app.listen(process.env.PORT ?? 3001);
 }
-bootstrap();
+void bootstrap();

@@ -41,8 +41,8 @@ import { InternalController } from './internal/internal.controller';
         throttlers: [
           {
             name: 'global',
-            ttl: 60000,    // 1 minute window
-            limit: 100,    // 100 requests per minute per IP
+            ttl: 60000, // 1 minute window
+            limit: 100, // 100 requests per minute per IP
           },
         ],
         storage: new ThrottlerStorageRedisService(config.get('REDIS_URL')),
@@ -52,7 +52,8 @@ import { InternalController } from './internal/internal.controller';
     BullModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => {
-        const redisUrl = configService.get<string>('REDIS_URL') || 'redis://localhost:6379';
+        const redisUrl =
+          configService.get<string>('REDIS_URL') || 'redis://localhost:6379';
         const isProd = process.env.NODE_ENV === 'production';
         return {
           redis: {
@@ -79,6 +80,7 @@ import { InternalController } from './internal/internal.controller';
     InvitationsModule,
     DepartmentsModule,
     AssessmentModule,
+    PathsModule,
     UsageModule,
     UsersModule,
     NotificationsModule,
@@ -106,8 +108,6 @@ import { InternalController } from './internal/internal.controller';
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer
-      .apply(RequestLoggerMiddleware, AuditMiddleware)
-      .forRoutes('*');
+    consumer.apply(RequestLoggerMiddleware, AuditMiddleware).forRoutes('*');
   }
 }

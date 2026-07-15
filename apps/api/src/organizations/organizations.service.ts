@@ -1,4 +1,8 @@
-import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateOrgDto } from './dto/create-org.dto';
 import { UpdateOrgDto } from './dto/update-org.dto';
@@ -10,10 +14,12 @@ export class OrganizationsService {
   async createOrganization(dto: CreateOrgDto) {
     // Check slug is not taken
     const existing = await this.prisma.organization.findUnique({
-      where: { slug: dto.slug }
+      where: { slug: dto.slug },
     });
     if (existing) {
-      throw new ConflictException('This company URL is already taken. Please choose another.');
+      throw new ConflictException(
+        'This company URL is already taken. Please choose another.',
+      );
     }
 
     // Use transaction to create org + first admin user atomically
@@ -24,7 +30,7 @@ export class OrganizationsService {
           slug: dto.slug,
           industry: dto.industry,
           planTier: dto.planTier || 'STARTER',
-        }
+        },
       });
 
       const user = await tx.user.create({
@@ -36,7 +42,7 @@ export class OrganizationsService {
           role: 'ORG_ADMIN',
           invitationStatus: 'ACCEPTED',
           onboardingCompletedAt: new Date(),
-        }
+        },
       });
 
       return { org, user };
@@ -48,9 +54,9 @@ export class OrganizationsService {
       where: { id },
       include: {
         _count: {
-          select: { users: true }
-        }
-      }
+          select: { users: true },
+        },
+      },
     });
     if (!org) throw new NotFoundException('Organization not found');
     return org;
@@ -71,25 +77,34 @@ export class OrganizationsService {
     const [total, active, completed, notStarted, pathsGenerated] =
       await Promise.all([
         this.prisma.user.count({
-          where: { organizationId: orgId, role: 'LEARNER' }
+          where: { organizationId: orgId, role: 'LEARNER' },
         }),
         this.prisma.userProgress.count({
-          where: { learningPath: { organizationId: orgId }, status: 'IN_PROGRESS' }
+          where: {
+            learningPath: { organizationId: orgId },
+            status: 'IN_PROGRESS',
+          },
         }),
         this.prisma.userProgress.count({
-          where: { learningPath: { organizationId: orgId }, status: 'COMPLETED' }
+          where: {
+            learningPath: { organizationId: orgId },
+            status: 'COMPLETED',
+          },
         }),
         this.prisma.userProgress.count({
-          where: { learningPath: { organizationId: orgId }, status: 'NOT_STARTED' }
+          where: {
+            learningPath: { organizationId: orgId },
+            status: 'NOT_STARTED',
+          },
         }),
         this.prisma.learningPath.count({
-          where: { organizationId: orgId }
+          where: { organizationId: orgId },
         }),
       ]);
 
     const avgResult = await this.prisma.userProgress.aggregate({
       where: { learningPath: { organizationId: orgId } },
-      _avg: { overallCompletionPct: true }
+      _avg: { overallCompletionPct: true },
     });
 
     return {
@@ -123,8 +138,8 @@ export class OrganizationsService {
         aiTokensUsed: true,
         createdAt: true,
         updatedAt: true,
-        _count: { select: { users: true } }
-      }
+        _count: { select: { users: true } },
+      },
     });
   }
 
@@ -132,10 +147,10 @@ export class OrganizationsService {
     return this.prisma.organization.update({
       where: { id: orgId },
       data: {
-        name:            dto.name,
-        logoUrl:         dto.logoUrl,
-        industry:        dto.industry,
-        timezone:        dto.timezone,
+        name: dto.name,
+        logoUrl: dto.logoUrl,
+        industry: dto.industry,
+        timezone: dto.timezone,
         defaultLanguage: dto.defaultLanguage,
       },
     });
@@ -144,7 +159,7 @@ export class OrganizationsService {
   async getPresignedUploadUrl(orgId: string, fileType: string) {
     return {
       uploadUrl: null,
-      message: 'Logo upload via URL for MVP'
+      message: 'Logo upload via URL for MVP',
     };
   }
 }

@@ -1,4 +1,12 @@
-import { IsString, MinLength, MaxLength, Matches, IsOptional, IsEnum, IsEmail } from 'class-validator';
+import {
+  IsString,
+  MinLength,
+  MaxLength,
+  Matches,
+  IsOptional,
+  IsEnum,
+  IsEmail,
+} from 'class-validator';
 import { PlanTier } from '@prisma/client';
 
 export class CreateOrgDto {
@@ -10,7 +18,9 @@ export class CreateOrgDto {
   @IsString()
   @MinLength(2)
   @MaxLength(50)
-  @Matches(/^[a-z0-9-]+$/, { message: 'Slug must be lowercase letters, numbers, and hyphens only' })
+  @Matches(/^[a-z0-9-]+$/, {
+    message: 'Slug must be lowercase letters, numbers, and hyphens only',
+  })
   slug: string;
 
   @IsOptional()

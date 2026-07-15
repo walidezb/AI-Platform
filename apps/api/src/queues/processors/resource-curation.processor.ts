@@ -1,4 +1,10 @@
-import { Processor, Process, OnQueueFailed, OnQueueCompleted, OnQueueStalled } from '@nestjs/bull';
+import {
+  Processor,
+  Process,
+  OnQueueFailed,
+  OnQueueCompleted,
+  OnQueueStalled,
+} from '@nestjs/bull';
 import { Logger } from '@nestjs/common';
 import * as Bull from 'bull';
 import { QUEUE_NAMES, JOB_NAMES } from '../queue.constants';
@@ -12,7 +18,9 @@ export class ResourceCurationProcessor {
   async handleResourceCuration(job: Bull.Job<ResourceCurationPayload>) {
     this.logger.log(`Curating resources for module: ${job.data.moduleId}`);
     // TODO Phase 3: curate resources using AI
-    this.logger.log(`Resources for module ${job.data.moduleId} curated successfully`);
+    this.logger.log(
+      `Resources for module ${job.data.moduleId} curated successfully`,
+    );
   }
 
   @OnQueueCompleted()

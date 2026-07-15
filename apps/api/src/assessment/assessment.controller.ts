@@ -38,11 +38,17 @@ export class AssessmentController {
     const assessment = await this.service.createAssessment(user.id, orgId);
 
     // Get org for AI context
-    const org = await this.prisma.organization.findUnique({ where: { id: orgId } });
+    const org = await this.prisma.organization.findUnique({
+      where: { id: orgId },
+    });
     if (!org) throw new NotFoundException('Organization not found');
 
     // Start session with AI service
-    const aiResponse = await this.service.startAssessmentSession(assessment, user, org);
+    const aiResponse = await this.service.startAssessmentSession(
+      assessment,
+      user,
+      org,
+    );
 
     return {
       success: true,
@@ -58,9 +64,7 @@ export class AssessmentController {
   @Post('start-by-token')
   @Public()
   @AssessmentThrottle()
-  async startAssessmentByToken(
-    @Body() body: { onboardingToken: string }
-  ) {
+  async startAssessmentByToken(@Body() body: { onboardingToken: string }) {
     const user = await this.prisma.user.findFirst({
       where: {
         onboardingToken: body.onboardingToken,
@@ -71,10 +75,19 @@ export class AssessmentController {
       throw new UnauthorizedException('Invalid or expired onboarding token');
     }
 
-    const assessment = await this.service.createAssessment(user.id, user.organizationId);
-    const org = await this.prisma.organization.findUnique({ where: { id: user.organizationId } });
+    const assessment = await this.service.createAssessment(
+      user.id,
+      user.organizationId,
+    );
+    const org = await this.prisma.organization.findUnique({
+      where: { id: user.organizationId },
+    });
     if (!org) throw new NotFoundException('Organization not found');
-    const aiResponse = await this.service.startAssessmentSession(assessment, user, org);
+    const aiResponse = await this.service.startAssessmentSession(
+      assessment,
+      user,
+      org,
+    );
 
     return {
       success: true,
@@ -167,7 +180,7 @@ export class AssessmentController {
         const chunk = decoder.decode(value);
         res.write(chunk);
         // Force flush for real-time streaming
-        if ((res as any).flush) (res as any).flush();
+        if (res.flush) res.flush();
       }
     } finally {
       res.end();
@@ -179,7 +192,8 @@ export class AssessmentController {
   @SkipThrottle()
   async markComplete(
     @Param('id') id: string,
-    @Body() body: {
+    @Body()
+    body: {
       skillProfile: any;
       conversationLog: any[];
       userId: string;
@@ -219,7 +233,7 @@ export class AssessmentController {
     // Fetch user details for notification
     const user = await this.prisma.user.findUnique({
       where: { id: body.userId },
-      select: { fullName: true }
+      select: { fullName: true },
     });
 
     // Queue assessment completed notification
@@ -241,7 +255,7 @@ export class AssessmentController {
   ) {
     // Validate via onboarding token (public route)
     const user = await this.prisma.user.findFirst({
-      where: { onboardingToken, id: userId }
+      where: { onboardingToken, id: userId },
     });
     if (!user) throw new NotFoundException();
 
@@ -255,7 +269,7 @@ export class AssessmentController {
         identifiedRole: true,
         experienceLevel: true,
         completedAt: true,
-      }
+      },
     });
 
     if (!assessment) {
@@ -273,7 +287,7 @@ export class AssessmentController {
         totalMilestones: true,
         estimatedHours: true,
         createdAt: true,
-      }
+      },
     });
 
     if (!path) {
@@ -283,7 +297,7 @@ export class AssessmentController {
         assessment: {
           identifiedRole: assessment.identifiedRole,
           experienceLevel: assessment.experienceLevel,
-        }
+        },
       };
     }
 
@@ -299,7 +313,7 @@ export class AssessmentController {
       assessment: {
         identifiedRole: assessment.identifiedRole,
         experienceLevel: assessment.experienceLevel,
-      }
+      },
     };
   }
 
@@ -313,8 +327,8 @@ export class AssessmentController {
         onboardingTokenExpiry: { gte: new Date() },
       },
       include: {
-        organization: { select: { name: true, logoUrl: true } }
-      }
+        organization: { select: { name: true, logoUrl: true } },
+      },
     });
     if (!user) throw new NotFoundException('Invalid or expired token');
 
@@ -331,7 +345,7 @@ export class AssessmentController {
         learningGoals: true,
         completedAt: true,
         skillProfile: true,
-      }
+      },
     });
 
     if (!assessment) {
@@ -349,7 +363,7 @@ export class AssessmentController {
         weakAreas: assessment.weakAreas,
         learningGoals: assessment.learningGoals,
         completedAt: assessment.completedAt,
-      }
+      },
     };
   }
 }

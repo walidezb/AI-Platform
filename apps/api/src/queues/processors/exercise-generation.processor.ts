@@ -1,4 +1,10 @@
-import { Processor, Process, OnQueueFailed, OnQueueCompleted, OnQueueStalled } from '@nestjs/bull';
+import {
+  Processor,
+  Process,
+  OnQueueFailed,
+  OnQueueCompleted,
+  OnQueueStalled,
+} from '@nestjs/bull';
 import { Logger } from '@nestjs/common';
 import * as Bull from 'bull';
 import { QUEUE_NAMES, JOB_NAMES } from '../queue.constants';
@@ -10,9 +16,13 @@ export class ExerciseGenerationProcessor {
 
   @Process(JOB_NAMES.GENERATE_EXERCISES)
   async handleExerciseGeneration(job: Bull.Job<ExerciseGenerationPayload>) {
-    this.logger.log(`Generating exercises for milestone: ${job.data.milestoneId}`);
+    this.logger.log(
+      `Generating exercises for milestone: ${job.data.milestoneId}`,
+    );
     // TODO Phase 3: generate exercises using AI
-    this.logger.log(`Exercises for milestone ${job.data.milestoneId} generated successfully`);
+    this.logger.log(
+      `Exercises for milestone ${job.data.milestoneId} generated successfully`,
+    );
   }
 
   @OnQueueCompleted()

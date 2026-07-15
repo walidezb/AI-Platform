@@ -9,7 +9,9 @@ export class ManagerService {
     // Query completions joined with user info
     const completions = await this.prisma.completion.findMany({
       where: { user: { organizationId: orgId } },
-      include: { user: { select: { fullName: true, avatarUrl: true, id: true } } },
+      include: {
+        user: { select: { fullName: true, avatarUrl: true, id: true } },
+      },
       orderBy: { completedAt: 'desc' },
       take: limit,
     });
@@ -19,7 +21,7 @@ export class ManagerService {
       where: {
         organizationId: orgId,
         role: 'LEARNER',
-        createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) }
+        createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
       },
       orderBy: { createdAt: 'desc' },
       take: 3,
@@ -27,15 +29,18 @@ export class ManagerService {
 
     // Merge and sort by date
     const activities = [
-      ...completions.map(c => ({
+      ...completions.map((c) => ({
         id: c.id,
         employeeName: c.user.fullName,
         avatarUrl: c.user.avatarUrl,
-        action: c.entityType === 'MILESTONE' ? 'completed milestone' : 'completed module',
+        action:
+          c.entityType === 'MILESTONE'
+            ? 'completed milestone'
+            : 'completed module',
         type: c.passed ? 'completed' : 'in-progress',
         createdAt: c.completedAt,
       })),
-      ...newUsers.map(u => ({
+      ...newUsers.map((u) => ({
         id: u.id,
         employeeName: u.fullName,
         avatarUrl: u.avatarUrl,
@@ -43,8 +48,12 @@ export class ManagerService {
         type: 'active',
         createdAt: u.createdAt,
       })),
-    ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-     .slice(0, limit);
+    ]
+      .sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      )
+      .slice(0, limit);
 
     return activities;
   }

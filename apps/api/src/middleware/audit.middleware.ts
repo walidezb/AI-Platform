@@ -20,7 +20,7 @@ export class AuditMiddleware implements NestMiddleware {
             orgId: user?.organizationId ?? null,
             status: res.statusCode,
             timestamp: new Date().toISOString(),
-          })
+          }),
         );
       });
     }

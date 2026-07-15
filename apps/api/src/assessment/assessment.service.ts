@@ -23,7 +23,7 @@ export class AssessmentService {
   async createAssessment(userId: string, orgId: string): Promise<Assessment> {
     // Check if active assessment exists
     const existing = await this.prisma.assessment.findFirst({
-      where: { userId, status: { in: ['PENDING', 'IN_PROGRESS'] } }
+      where: { userId, status: { in: ['PENDING', 'IN_PROGRESS'] } },
     });
     if (existing) return existing;
 
@@ -32,15 +32,19 @@ export class AssessmentService {
         userId,
         organizationId: orgId,
         status: 'IN_PROGRESS',
-      }
+      },
     });
   }
 
-  async startAssessmentSession(assessment: Assessment, user: User, org: Organization) {
+  async startAssessmentSession(
+    assessment: Assessment,
+    user: User,
+    org: Organization,
+  ) {
     let departmentName: string | null = null;
     if (user.departmentId) {
       const dept = await this.prisma.department.findUnique({
-        where: { id: user.departmentId }
+        where: { id: user.departmentId },
       });
       if (dept) departmentName = dept.name;
     }

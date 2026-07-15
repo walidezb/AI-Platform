@@ -7,10 +7,7 @@ import { SkipThrottle } from '@nestjs/throttler';
 export class InternalController {
   @Public()
   @Post('assessments/:id/complete')
-  async completeAssessment(
-    @Param('id') id: string,
-    @Body() body: any
-  ) {
+  async completeAssessment(@Param('id') id: string, @Body() body: any) {
     return { success: true, message: `Assessment ${id} completed`, data: body };
   }
 

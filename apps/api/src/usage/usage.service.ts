@@ -52,7 +52,7 @@ export class UsageService {
 
     const usedBigInt = BigInt(org.aiTokensUsed);
     const budgetBigInt = BigInt(org.aiTokensBudget);
-    
+
     if (budgetBigInt === 0n) return;
     const pct = Number((usedBigInt * 100n) / budgetBigInt);
 
