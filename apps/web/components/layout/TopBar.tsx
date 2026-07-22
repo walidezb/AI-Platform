@@ -1,6 +1,7 @@
 import React from 'react';
 import { UserButton } from '@clerk/nextjs';
 import { NotificationBell } from './NotificationBell';
+import { BudgetWarningIcon } from './BudgetWarningIcon';
 
 interface TopBarProps {
   title: string;
@@ -30,6 +31,9 @@ export function TopBar({ title, breadcrumb }: TopBarProps) {
 
       {/* Right Actions */}
       <div className="flex items-center gap-4">
+        {/* Budget Warning Icon */}
+        <BudgetWarningIcon />
+
         {/* Notification Bell */}
         <NotificationBell />
 

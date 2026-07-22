@@ -10,6 +10,8 @@ import { ExerciseEvaluationProcessor } from './processors/exercise-evaluation.pr
 import { NotificationProcessor } from './processors/notification.processor';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { AlertsModule } from '../alerts/alerts.module';
+import { BillingModule } from '../billing/billing.module';
+import { PrismaModule } from '../prisma/prisma.module';
 
 @Module({
   imports: [
@@ -22,6 +24,8 @@ import { AlertsModule } from '../alerts/alerts.module';
       { name: QUEUE_NAMES.NOTIFICATION },
     ),
     NotificationsModule,
+    PrismaModule,
+    BillingModule,
     forwardRef(() => AlertsModule),
   ],
   providers: [

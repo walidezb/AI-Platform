@@ -4,10 +4,8 @@ import {
   MaxLength,
   Matches,
   IsOptional,
-  IsEnum,
   IsEmail,
 } from 'class-validator';
-import { PlanTier } from '@prisma/client';
 
 export class CreateOrgDto {
   @IsString()
@@ -28,8 +26,8 @@ export class CreateOrgDto {
   industry?: string;
 
   @IsOptional()
-  @IsEnum(PlanTier)
-  planTier?: PlanTier;
+  @IsString()
+  planTier?: string;
 
   // The Clerk user creating this org (becomes ORG_ADMIN)
   @IsString()

@@ -103,6 +103,23 @@ export class UsageController {
     };
   }
 
+  // Org Admin / Manager usage dashboard endpoint
+  @Get('usage/org/:orgId')
+  @Roles(UserRole.ORG_ADMIN, UserRole.MANAGER, UserRole.PLATFORM_ADMIN)
+  async getOrgUsageDashboard(
+    @Param('orgId') orgId: string,
+    @CurrentUser() user: any,
+  ) {
+    if (
+      user?.organizationId !== orgId &&
+      user?.role !== UserRole.PLATFORM_ADMIN
+    ) {
+      throw new ForbiddenException('Access denied');
+    }
+    const data = await this.service.getOrgUsageDashboard(orgId);
+    return { success: true, data };
+  }
+
   // Budget widget for settings page
   @Get('usage/budget')
   @Roles(UserRole.ORG_ADMIN, UserRole.MANAGER)

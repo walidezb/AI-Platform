@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, User, Send, Loader2 } from 'lucide-react';
+import { Sparkles, User, Send, Loader2, AlertTriangle } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { Logo } from '@/components/ui/Logo';
 import { Button } from '@/components/ui/button';
@@ -33,6 +33,7 @@ export function ChatInterface({ token }: ChatInterfaceProps) {
   const [isComplete, setIsComplete] = useState(false);
   const [assessmentId, setAssessmentId] = useState<string | null>(null);
   const [isInitializing, setIsInitializing] = useState(true);
+  const [budgetExceeded, setBudgetExceeded] = useState(false);
   
   // Draft restore states
   const [showRestorePrompt, setShowRestorePrompt] = useState(false);
@@ -77,6 +78,11 @@ export function ChatInterface({ token }: ChatInterfaceProps) {
           },
           body: JSON.stringify({ onboardingToken: token }),
         });
+
+        if (res.status === 402) {
+          setBudgetExceeded(true);
+          return;
+        }
 
         if (!res.ok) {
           throw new Error('Failed to initialize session');
@@ -263,6 +269,23 @@ export function ChatInterface({ token }: ChatInterfaceProps) {
       return () => clearTimeout(timer);
     }
   }, [isComplete, goToCompletionPage]);
+
+  if (budgetExceeded) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 text-center">
+        <div className="h-16 w-16 rounded-2xl bg-amber-500/10 flex items-center justify-center mb-4">
+          <AlertTriangle className="h-8 w-8 text-amber-400" />
+        </div>
+        <h2 className="text-xl font-bold text-slate-100">
+          AI Assessment Unavailable
+        </h2>
+        <p className="text-slate-400 max-w-sm text-sm mt-2">
+          Your organization&apos;s AI budget has been reached for this billing
+          period. Please contact your administrator to resume your assessment.
+        </p>
+      </div>
+    );
+  }
 
   if (isInitializing) {
     return (

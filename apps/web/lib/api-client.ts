@@ -17,14 +17,25 @@ export function createApiClient(getToken: () => Promise<string | null>) {
     options?: RequestInit
   ): Promise<T> => {
     const token = await getToken();
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      Authorization: token ? `Bearer ${token}` : '',
+      ...(options?.headers as Record<string, string>),
+    };
+
+    // Impersonation: override auth token if present
+    if (typeof window !== 'undefined') {
+      const impToken = sessionStorage.getItem('impersonation_token');
+      if (impToken) {
+        headers['Authorization'] = `Bearer ${impToken}`;
+        headers['X-Impersonating'] = 'true';
+      }
+    }
+
     const res = await fetch(`${apiUrl}${path}`, {
       ...options,
       method,
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: token ? `Bearer ${token}` : '',
-        ...options?.headers,
-      },
+      headers,
       body: body ? JSON.stringify(body) : undefined,
     });
 

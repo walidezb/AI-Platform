@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { serverFetch } from '@/lib/api-server';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { LearnerProgressSyncWrapper } from '@/components/learner/LearnerProgressSyncWrapper';
+import { BudgetExceededBanner } from '@/components/BudgetExceededBanner';
 
 interface User {
   id: string;
@@ -79,6 +80,7 @@ export default async function LearnerLayout({
         }
         user={user || { fullName: 'Learner', role: 'LEARNER' }}
       >
+        <BudgetExceededBanner />
         {children}
       </DashboardLayout>
     </LearnerProgressSyncWrapper>

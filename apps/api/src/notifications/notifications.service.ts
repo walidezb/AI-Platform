@@ -154,6 +154,27 @@ export class NotificationsService {
 
   // ── IN-APP NOTIFICATIONS ───────────────────────────────
 
+  async create(params: {
+    userId: string;
+    type: any;
+    title: string;
+    message?: string;
+    data?: any;
+  }) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: params.userId },
+      select: { organizationId: true },
+    });
+    if (!user) return;
+    return this.createNotification({
+      userId: params.userId,
+      organizationId: user.organizationId,
+      type: (params.type as NotificationType) || NotificationType.SYSTEM,
+      title: params.title,
+      body: params.message || params.title,
+    });
+  }
+
   async createNotification(data: {
     userId: string;
     organizationId: string;

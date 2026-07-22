@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { requireAuth } from '@/lib/auth';
 import { serverFetch } from '@/lib/api-server';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
+import { ImpersonationBanner } from '@/components/admin/ImpersonationBanner';
 
 interface User {
   id: string;
@@ -47,18 +48,30 @@ export default async function ManagerLayout({
     { label: 'My Team',     href: '/manage/team',        icon: 'users' as const },
     { label: 'Analytics',   href: '/manage/analytics',   icon: 'analytics' as const },
     { label: 'Invitations', href: '/manage/invitations', icon: 'mail' as const },
+    ...(user.role === 'ORG_ADMIN' || user.role === 'PLATFORM_ADMIN'
+      ? [
+          {
+            label: 'Billing',
+            href: '/manage/billing',
+            icon: 'billing' as const,
+          },
+        ]
+      : []),
     { label: 'Settings',    href: '/manage/settings',    icon: 'settings' as const },
   ];
 
   return (
-    <DashboardLayout
-      navItems={navItems}
-      pageTitle="Manager Portal"
-      breadcrumb={['Manager', 'Dashboard']}
-      org={user.organization || { name: 'Your Workspace', logoUrl: null, planTier: 'STARTER' }}
-      user={user}
-    >
-      {children}
-    </DashboardLayout>
+    <>
+      <ImpersonationBanner />
+      <DashboardLayout
+        navItems={navItems}
+        pageTitle="Manager Portal"
+        breadcrumb={['Manager', 'Dashboard']}
+        org={user.organization || { name: 'Your Workspace', logoUrl: null, planTier: 'STARTER' }}
+        user={user}
+      >
+        {children}
+      </DashboardLayout>
+    </>
   );
 }

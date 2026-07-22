@@ -180,6 +180,262 @@ export class EmailService {
     this.logger.log(`Path ready email queued for ${params.to}`);
   }
 
+  async sendBudgetWarning80(params: {
+    to: string;
+    adminName: string;
+    orgName: string;
+    percentUsed: number;
+    tokensUsed: number;
+    budget: number;
+    periodEnd: Date;
+    upgradeUrl: string;
+    usageUrl: string;
+  }): Promise<void> {
+    const {
+      to,
+      adminName,
+      orgName,
+      percentUsed,
+      tokensUsed,
+      budget,
+      periodEnd,
+      upgradeUrl,
+      usageUrl,
+    } = params;
+
+    const remaining = Math.max(budget - tokensUsed, 0);
+    const remainingK = (remaining / 1000).toFixed(0);
+    const usedK = (tokensUsed / 1000).toFixed(0);
+    const budgetK = (budget / 1000).toFixed(0);
+    const barWidth = Math.min(percentUsed, 100);
+    const daysUntilReset = Math.max(
+      1,
+      Math.ceil((periodEnd.getTime() - Date.now()) / (1000 * 60 * 60 * 24)),
+    );
+
+    const fromEmail =
+      this.config.get<string>('SENDGRID_FROM_EMAIL') || 'no-reply@ezlearn.ai';
+
+    const html = `
+      <div style="font-family:'Inter',sans-serif;max-width:580px;
+                  margin:0 auto;background:#0f0f1a;color:#e2e8f0;
+                  border-radius:12px;overflow:hidden">
+
+        <!-- Header -->
+        <div style="background:linear-gradient(135deg,#f59e0b,#d97706);
+                    padding:28px 32px">
+          <div style="font-size:22px;font-weight:700;color:white">
+            ⚠️ AI Budget Warning
+          </div>
+          <div style="font-size:14px;color:rgba(255,255,255,0.85);margin-top:4px">
+            ${orgName} · ${percentUsed}% used this billing period
+          </div>
+        </div>
+
+        <!-- Body -->
+        <div style="padding:28px 32px">
+          <p style="font-size:15px;color:#94a3b8;margin:0 0 16px">
+            Hi ${adminName},
+          </p>
+          <p style="font-size:15px;line-height:1.6;margin:0 0 24px">
+            Your organization has consumed
+            <strong style="color:#f59e0b">${percentUsed}%</strong>
+            of its monthly AI token budget.
+            At the current rate, you may run out before your
+            billing period resets in
+            <strong style="color:#e2e8f0">${daysUntilReset} days</strong>.
+          </p>
+
+          <!-- Usage bar -->
+          <div style="background:#1a1a2e;border-radius:10px;
+                      padding:20px;margin-bottom:24px">
+            <div style="display:flex;justify-content:space-between;
+                        font-size:13px;color:#94a3b8;margin-bottom:10px">
+              <span>${usedK}K tokens used</span>
+              <span>${budgetK}K budget</span>
+            </div>
+            <div style="height:10px;background:#0f172a;border-radius:5px;
+                        overflow:hidden">
+              <div style="height:100%;width:${barWidth}%;
+                          background:linear-gradient(90deg,#f59e0b,#d97706);
+                          border-radius:5px">
+              </div>
+            </div>
+            <div style="text-align:right;font-size:12px;
+                        color:#f59e0b;margin-top:6px">
+              ${remainingK}K tokens remaining
+            </div>
+          </div>
+
+          <!-- Usage breakdown -->
+          <div style="margin-bottom:24px">
+            <p style="font-size:13px;color:#6b7280;margin:0 0 12px;
+                      text-transform:uppercase;letter-spacing:0.05em">
+              What's using your budget
+            </p>
+            <table style="width:100%;font-size:13px">
+              <tr>
+                <td style="color:#94a3b8;padding:4px 0">Assessment AI</td>
+                <td style="color:#e2e8f0;text-align:right">~50%</td>
+              </tr>
+              <tr>
+                <td style="color:#94a3b8;padding:4px 0">Path Generation</td>
+                <td style="color:#e2e8f0;text-align:right">~30%</td>
+              </tr>
+              <tr>
+                <td style="color:#94a3b8;padding:4px 0">Exercise Evaluation</td>
+                <td style="color:#e2e8f0;text-align:right">~20%</td>
+              </tr>
+            </table>
+          </div>
+
+          <!-- CTAs -->
+          <div style="display:flex;gap:12px;flex-wrap:wrap">
+            <a href="${upgradeUrl}"
+               style="flex:1;min-width:160px;text-align:center;
+                      display:inline-block;padding:14px 24px;
+                      background:linear-gradient(135deg,#f59e0b,#d97706);
+                      color:white;text-decoration:none;border-radius:8px;
+                      font-weight:600;font-size:14px">
+              Upgrade Plan →
+            </a>
+            <a href="${usageUrl}"
+               style="flex:1;min-width:160px;text-align:center;
+                      display:inline-block;padding:14px 24px;
+                      background:#1e293b;color:#94a3b8;
+                      text-decoration:none;border-radius:8px;
+                      font-size:14px;border:1px solid #334155">
+              View Usage Details
+            </a>
+          </div>
+        </div>
+      </div>
+    `;
+
+    try {
+      await sgMail.send({
+        to,
+        from: { email: fromEmail, name: 'EZ LEARN' },
+        subject: `⚠️ You've used ${percentUsed}% of your AI budget`,
+        html,
+      });
+      this.logger.log(`80% budget warning email sent to ${to}`);
+    } catch (err) {
+      this.logger.error(`Failed to send 80% budget warning email to ${to}`, err);
+    }
+  }
+
+  async sendBudgetExceeded100(params: {
+    to: string;
+    adminName: string;
+    orgName: string;
+    percentUsed: number;
+    tokensUsed: number;
+    budget: number;
+    periodEnd: Date;
+    upgradeUrl: string;
+  }): Promise<void> {
+    const {
+      to,
+      adminName,
+      orgName,
+      percentUsed,
+      tokensUsed,
+      budget,
+      periodEnd,
+      upgradeUrl,
+    } = params;
+
+    const daysUntilReset = Math.max(
+      1,
+      Math.ceil((periodEnd.getTime() - Date.now()) / (1000 * 60 * 60 * 24)),
+    );
+
+    const fromEmail =
+      this.config.get<string>('SENDGRID_FROM_EMAIL') || 'no-reply@ezlearn.ai';
+
+    const html = `
+      <div style="font-family:'Inter',sans-serif;max-width:580px;
+                  margin:0 auto;background:#0f0f1a;color:#e2e8f0;
+                  border-radius:12px;overflow:hidden">
+
+        <!-- Header: red gradient -->
+        <div style="background:linear-gradient(135deg,#ef4444,#dc2626);
+                    padding:28px 32px">
+          <div style="font-size:22px;font-weight:700;color:white">
+            🚨 AI Budget Exceeded
+          </div>
+          <div style="font-size:14px;color:rgba(255,255,255,0.85);
+                      margin-top:4px">
+            ${orgName} · AI operations are now paused
+          </div>
+        </div>
+
+        <!-- Body -->
+        <div style="padding:28px 32px">
+          <p style="font-size:15px;color:#94a3b8;margin:0 0 16px">
+            Hi ${adminName},
+          </p>
+
+          <!-- Impact box -->
+          <div style="background:#1a1a2e;border-radius:10px;
+                      padding:20px;margin-bottom:24px;
+                      border-left:4px solid #ef4444">
+            <p style="font-size:14px;font-weight:600;
+                      color:#ef4444;margin:0 0 12px">
+              What's affected right now:
+            </p>
+            <ul style="margin:0;padding-left:16px;
+                       font-size:13px;color:#94a3b8;line-height:1.8">
+              <li>❌ New AI assessments are paused</li>
+              <li>❌ Learning path generation is paused</li>
+              <li>❌ Exercise AI evaluation is paused</li>
+              <li>✅ Existing paths and progress remain accessible</li>
+              <li>✅ Managers can still view all dashboards</li>
+            </ul>
+          </div>
+
+          <p style="font-size:14px;color:#94a3b8;line-height:1.6;
+                    margin:0 0 24px">
+            Your budget resets in
+            <strong style="color:#e2e8f0">${daysUntilReset} days</strong>.
+            To immediately restore AI features, upgrade your plan
+            or purchase additional tokens below.
+          </p>
+
+          <!-- CTA -->
+          <div style="text-align:center">
+            <a href="${upgradeUrl}"
+               style="display:inline-block;padding:16px 40px;
+                      background:linear-gradient(135deg,#ef4444,#dc2626);
+                      color:white;text-decoration:none;border-radius:10px;
+                      font-weight:700;font-size:16px">
+              Upgrade Immediately →
+            </a>
+          </div>
+
+          <p style="margin-top:20px;font-size:12px;
+                    color:#475569;text-align:center">
+            AI operations will resume automatically once your plan is upgraded
+            or your billing period resets.
+          </p>
+        </div>
+      </div>
+    `;
+
+    try {
+      await sgMail.send({
+        to,
+        from: { email: fromEmail, name: 'EZ LEARN' },
+        subject: `🚨 AI budget exceeded — learning paths paused`,
+        html,
+      });
+      this.logger.log(`100% budget exceeded email sent to ${to}`);
+    } catch (err) {
+      this.logger.error(`Failed to send 100% budget exceeded email to ${to}`, err);
+    }
+  }
+
   async sendBudgetWarningEmail(params: {
     to: string;
     name: string;
@@ -557,6 +813,79 @@ export class EmailService {
       this.logger.log(`Nudge email sent to ${to}`);
     } catch (err) {
       this.logger.error(`Failed to send nudge email to ${to}`, err);
+    }
+  }
+
+  async sendPaymentFailedAlert(params: {
+    to: string;
+    adminName: string;
+    amountDue: number;
+    currency: string;
+    portalUrl: string;
+  }): Promise<void> {
+    const { to, adminName, amountDue, currency, portalUrl } = params;
+    const fromEmail =
+      this.config.get<string>('SENDGRID_FROM_EMAIL') || 'no-reply@ezlearn.ai';
+
+    try {
+      await sgMail.send({
+        to,
+        from: { email: fromEmail, name: 'EZ LEARN' },
+        subject: `🚨 Payment failed — action required`,
+        html: `
+      <div style="font-family:'Inter',sans-serif;max-width:520px;
+                  margin:0 auto;background:#0f0f1a;color:#e2e8f0;
+                  border-radius:12px;overflow:hidden">
+
+        <div style="background:linear-gradient(135deg,#ef4444,#dc2626);
+                    padding:28px 32px">
+          <div style="font-size:22px;font-weight:700;color:white">
+            🚨 Payment Failed
+          </div>
+          <div style="font-size:14px;color:rgba(255,255,255,0.8);
+                      margin-top:6px">
+            Immediate action required
+          </div>
+        </div>
+
+        <div style="padding:28px 32px">
+          <p style="font-size:15px;color:#94a3b8;margin:0 0 16px">
+            Hi ${adminName},
+          </p>
+          <p style="font-size:15px;line-height:1.6;margin:0 0 20px">
+            We were unable to process your payment of
+            <strong style="color:#e2e8f0">
+              ${currency} ${amountDue.toFixed(2)}
+            </strong>.
+            Please update your payment method to continue using
+            the platform without interruption.
+          </p>
+
+          <div style="background:#1a1a2e;border-radius:8px;
+                      padding:16px;margin-bottom:24px;
+                      border-left:3px solid #ef4444">
+            <p style="margin:0;font-size:13px;color:#94a3b8">
+              ⚠️ If payment is not received within 3 days,
+              AI learning features will be paused for your organization.
+            </p>
+          </div>
+
+          <div style="text-align:center">
+            <a href="${portalUrl}"
+               style="display:inline-block;padding:14px 32px;
+                      background:linear-gradient(135deg,#ef4444,#dc2626);
+                      color:white;text-decoration:none;border-radius:8px;
+                      font-weight:600;font-size:15px">
+              Update Payment Method →
+            </a>
+          </div>
+        </div>
+      </div>
+    `,
+      });
+      this.logger.log(`Payment failed email sent to ${to}`);
+    } catch (err) {
+      this.logger.error(`Failed to send payment failed email to ${to}`, err);
     }
   }
 }

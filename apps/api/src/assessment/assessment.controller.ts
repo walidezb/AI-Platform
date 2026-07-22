@@ -7,6 +7,7 @@ import {
   Query,
   Res,
   Headers,
+  UseGuards,
   NotFoundException,
   UnauthorizedException,
   ServiceUnavailableException,
@@ -21,6 +22,7 @@ import { Public } from '../auth/decorators/public.decorator';
 import { AssessmentThrottle } from '../auth/throttle.config';
 import { SkipThrottle } from '@nestjs/throttler';
 import { Response } from 'express';
+import { BudgetGuard } from '../usage/budget.guard';
 
 @Controller('assessment')
 export class AssessmentController {
@@ -32,6 +34,7 @@ export class AssessmentController {
   ) {}
 
   @Post('start')
+  @UseGuards(BudgetGuard)
   @AssessmentThrottle()
   async startAssessment(@CurrentUser() user: any, @OrgId() orgId: string) {
     // Get/create assessment record in DB
@@ -63,6 +66,7 @@ export class AssessmentController {
 
   @Post('start-by-token')
   @Public()
+  @UseGuards(BudgetGuard)
   @AssessmentThrottle()
   async startAssessmentByToken(@Body() body: { onboardingToken: string }) {
     const user = await this.prisma.user.findFirst({
@@ -115,6 +119,7 @@ export class AssessmentController {
   // Proxy streaming endpoint
   @Post(':id/message/stream')
   @Public()
+  @UseGuards(BudgetGuard)
   @AssessmentThrottle()
   async streamMessage(
     @Param('id') id: string,

@@ -21,8 +21,10 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Public } from '../auth/decorators/public.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { SkipThrottle } from '@nestjs/throttler';
+import { UseGuards } from '@nestjs/common';
 import { UserRole } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { BudgetGuard } from '../usage/budget.guard';
 
 @Controller()
 export class PathsController {
@@ -332,6 +334,7 @@ export class PathsController {
   }
 
   @Post('milestones/:milestoneId/exercises/regenerate')
+  @UseGuards(BudgetGuard)
   @Roles(UserRole.ORG_ADMIN, UserRole.PLATFORM_ADMIN)
   async regenerateExercises(
     @Param('milestoneId') milestoneId: string,

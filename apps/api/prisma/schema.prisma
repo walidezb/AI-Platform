@@ -108,6 +108,13 @@ enum InviteStatus {
   EXPIRED
 }
 
+enum OrgStatus {
+  ACTIVE
+  SUSPENDED
+  TRIAL
+  CANCELED
+}
+
 enum NotificationType {
   PATH_READY
   MILESTONE_COMPLETED
@@ -117,6 +124,8 @@ enum NotificationType {
   BUDGET_WARNING
   BUDGET_EXCEEDED
   STALLED_ALERT
+  PAYMENT_SUCCESS
+  PAYMENT_FAILED
   SYSTEM
 }
 
@@ -131,14 +140,19 @@ model Organization {
   logoUrl              String?
   industry             String?
   timezone             String           @default("Asia/Dubai")
-  planTier             PlanTier         @default(STARTER)
+  planTier               String?          @default("starter")
   maxEmployees         Int              @default(50)
   aiTokensUsed         BigInt           @default(0)
   aiTokensBudget       BigInt           @default(10000000)
   monthlyTokenBudgetUsd Float?          @default(50.0)
   stripeCustomerId     String?          @unique
-  stripeSubscriptionId String?          @unique
+  stripeSubscriptionId String?
+  subscriptionStatus   String?          @default("trialing")
+  currentPeriodStart   DateTime?
+  currentPeriodEnd     DateTime?
+  status               OrgStatus        @default(ACTIVE)
   isSuspended          Boolean          @default(false)
+  suspendedAt          DateTime?
   suspendedReason      String?
   defaultLanguage      Language         @default(EN)
   createdAt            DateTime         @default(now())
@@ -152,6 +166,25 @@ model Organization {
   notifications   Notification[]
   roleDefinitions RoleDefinition[]
   alertSettings   AlertSettings?
+  budgetAlerts    BudgetAlert[]
+}
+
+enum BudgetAlertType {
+  WARNING_80
+  EXCEEDED_100
+  EXCEEDED_120
+}
+
+model BudgetAlert {
+  id             String          @id @default(cuid())
+  organizationId String
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  type           BudgetAlertType
+  sentAt         DateTime        @default(now())
+  periodStart    DateTime
+  createdAt      DateTime        @default(now())
+
+  @@unique([organizationId, type, periodStart])
 }
 
 model AlertSettings {
@@ -477,20 +510,37 @@ model Notification {
 }
 
 model AiUsageLog {
-  id             String    @id @default(cuid())
-  organizationId String
-  userId         String
-  feature        AiFeature
-  modelUsed      String
-  tokensInput    Int       @default(0)
-  tokensOutput   Int       @default(0)
-  costUsd        Decimal   @db.Decimal(10, 6)
-  reported       Boolean   @default(false)
-  createdAt      DateTime  @default(now())
+  id                  String    @id @default(cuid())
+  organizationId      String
+  userId              String
+  feature             AiFeature
+  modelUsed           String
+  tokensInput         Int       @default(0)
+  tokensOutput        Int       @default(0)
+  tokensUsed          Int?      @default(0)
+  costUsd             Decimal   @db.Decimal(10, 6)
+  reported            Boolean   @default(false)
+  reportedToStripe    Boolean   @default(false)
+  reportedAt          DateTime?
+  stripeUsageRecordId String?
+  createdAt           DateTime  @default(now())
 
   organization Organization @relation(fields: [organizationId], references: [id])
   user         User         @relation(fields: [userId], references: [id])
 
   @@index([organizationId, createdAt])
   @@index([reported])
+}
+
+model AdminAuditLog {
+  id           String   @id @default(cuid())
+  action       String
+  performedBy  String
+  targetOrgId  String?
+  targetUserId String?
+  metadata     String?  // JSON string
+  createdAt    DateTime @default(now())
+
+  @@index([performedBy])
+  @@index([targetOrgId])
 }

@@ -11,7 +11,8 @@ import {
   Settings,
   Map,
   BookOpen,
-  Award
+  Award,
+  CreditCard
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '../ui/badge';
@@ -26,6 +27,8 @@ export const ICON_MAP = {
   map: Map,
   bookOpen: BookOpen,
   award: Award,
+  billing: CreditCard,
+  CreditCard: CreditCard,
   LayoutDashboard: LayoutDashboard,
   Map: Map,
   Settings: Settings,

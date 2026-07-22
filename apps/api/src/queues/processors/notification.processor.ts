@@ -9,6 +9,8 @@ import { Logger } from '@nestjs/common';
 import * as Bull from 'bull';
 import { NotificationsService } from '../../notifications/notifications.service';
 import { AlertsService } from '../../alerts/alerts.service';
+import { BillingService } from '../../billing/billing.service';
+import { PrismaService } from '../../prisma/prisma.service';
 import { UserRole } from '@prisma/client';
 import { QUEUE_NAMES } from '../queue.constants';
 
@@ -19,6 +21,8 @@ export class NotificationProcessor {
   constructor(
     private readonly notificationService: NotificationsService,
     private readonly alertsService: AlertsService,
+    private readonly billingService: BillingService,
+    private readonly prisma: PrismaService,
   ) {}
 
   @Process('daily-stalled-alerts')
@@ -26,6 +30,24 @@ export class NotificationProcessor {
     this.logger.log('Processing daily stalled learner alerts...');
     await this.alertsService.runDailyAlerts();
     this.logger.log('Daily stalled alert run complete');
+  }
+
+  @Process('stripe-usage-report')
+  async processUsageReport(job: Bull.Job): Promise<void> {
+    this.logger.log('Running hourly Stripe usage report...');
+    await this.billingService.reportAllOrgsUsage();
+  }
+
+  @Process('stripe-seat-update')
+  async processSeatUpdate(job: Bull.Job): Promise<void> {
+    this.logger.log('Running monthly seat count update...');
+    const orgs = await this.prisma.organization.findMany({
+      where: { stripeSubscriptionId: { not: null } },
+      select: { id: true },
+    });
+    for (const org of orgs) {
+      await this.billingService.updateSeatCount(org.id);
+    }
   }
 
   @Process('PATH_READY')

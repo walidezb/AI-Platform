@@ -21,6 +21,8 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Public } from '../auth/decorators/public.decorator';
 import { SkipThrottle } from '@nestjs/throttler';
+import { UseGuards } from '@nestjs/common';
+import { BudgetGuard } from '../usage/budget.guard';
 
 @Controller('exercises')
 export class ExercisesController {
@@ -116,6 +118,7 @@ export class ExercisesController {
 
   // ── SUBMIT EXERCISE ────────────────────────────────────
   @Post(':exerciseId/submit')
+  @UseGuards(BudgetGuard)
   @Roles(UserRole.LEARNER)
   async submitExercise(
     @Param('exerciseId') exerciseId: string,

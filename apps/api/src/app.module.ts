@@ -32,6 +32,9 @@ import { ProgressModule } from './progress/progress.module';
 import { ExercisesModule } from './exercises/exercises.module';
 import { UploadsModule } from './uploads/uploads.module';
 import { AlertsModule } from './alerts/alerts.module';
+import { BillingModule } from './billing/billing.module';
+import { AdminModule } from './admin/admin.module';
+import { OrgActiveGuard } from './guards/org-active.guard';
 
 import { InternalController } from './internal/internal.controller';
 
@@ -97,6 +100,8 @@ import { InternalController } from './internal/internal.controller';
     ExercisesModule,
     UploadsModule,
     AlertsModule,
+    BillingModule,
+    AdminModule,
   ],
   controllers: [AppController, InternalController],
   providers: [
@@ -114,6 +119,10 @@ import { InternalController } from './internal/internal.controller';
       useClass: RolesGuard,
     },
     {
+      provide: APP_GUARD,
+      useClass: OrgActiveGuard,
+    },
+    {
       provide: APP_INTERCEPTOR,
       useClass: OrgScopeInterceptor,
     },
@@ -124,6 +133,8 @@ export class AppModule implements NestModule, OnModuleInit {
 
   async onModuleInit() {
     await this.queueService.scheduleDailyAlerts();
+    await this.queueService.scheduleHourlyUsageReport();
+    await this.queueService.scheduleMonthlySeats();
   }
 
   configure(consumer: MiddlewareConsumer) {

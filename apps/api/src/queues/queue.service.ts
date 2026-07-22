@@ -42,6 +42,40 @@ export class QueueService {
     );
   }
 
+  /* Register hourly Stripe usage reporting job */
+  async scheduleHourlyUsageReport(): Promise<void> {
+    await this.notificationQueue.add(
+      'stripe-usage-report',
+      { type: 'STRIPE_USAGE_REPORT' },
+      {
+        repeat: {
+          cron: '0 * * * *', // every hour on the hour
+          tz: 'UTC',
+        },
+        jobId: 'stripe-usage-report',
+        removeOnComplete: { count: 24 }, // keep last 24 logs
+        removeOnFail: { count: 5 },
+      },
+    );
+  }
+
+  /* Schedule monthly seat count update */
+  async scheduleMonthlySeats(): Promise<void> {
+    await this.notificationQueue.add(
+      'stripe-seat-update',
+      { type: 'STRIPE_SEAT_UPDATE' },
+      {
+        repeat: {
+          cron: '0 0 1 * *', // 1st of each month at midnight
+          tz: 'UTC',
+        },
+        jobId: 'stripe-seat-update',
+        removeOnComplete: { count: 3 },
+        removeOnFail: { count: 3 },
+      },
+    );
+  }
+
   // Called when AI service reports assessment complete
   async addAssessmentCompleted(payload: AssessmentCompletedPayload) {
     return this.assessmentQueue.add(

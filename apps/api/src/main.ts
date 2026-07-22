@@ -8,10 +8,12 @@ import { createBullBoard } from '@bull-board/api';
 import { BullAdapter } from '@bull-board/api/bullAdapter';
 import { ExpressAdapter } from '@bull-board/express';
 import helmet from 'helmet';
+import express from 'express';
 
 import { AppModule } from './app.module';
 import { QUEUE_NAMES } from './queues/queue.constants';
 import { AllExceptionsFilter } from './filters/all-exceptions.filter';
+import { BudgetExceededFilter } from './filters/budget-exceeded.filter';
 
 // Initialize Sentry BEFORE creating the NestJS app
 Sentry.init({
@@ -23,7 +25,10 @@ Sentry.init({
 });
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { rawBody: true });
+
+  // Stripe raw body middleware for webhooks
+  app.use('/billing/webhook', express.raw({ type: 'application/json' }));
 
   // Apply Helmet Security Headers
   app.use(
@@ -90,8 +95,8 @@ async function bootstrap() {
     }),
   );
 
-  // Register Sentry Exception Filter
-  app.useGlobalFilters(new AllExceptionsFilter());
+  // Register Sentry Exception Filter & Budget Exceeded Filter
+  app.useGlobalFilters(new BudgetExceededFilter(), new AllExceptionsFilter());
 
   // Configure Bull Board
   const serverAdapter = new ExpressAdapter();
