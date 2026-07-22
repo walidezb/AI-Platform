@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { BookOpen, MessageSquare, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ExerciseDetail } from '@/hooks/learner/useExercise';
+import { fireSuccessConfetti } from '@/lib/confetti';
+import { MilestoneCompletionCheck } from './MilestoneCompletionCheck';
 
 interface ExerciseResultProps {
   result: {
@@ -29,6 +31,12 @@ export function ExerciseResult({
     (result.score !== undefined &&
       result.score !== null &&
       result.score >= exercise.passingScore);
+
+  useEffect(() => {
+    if (passed) {
+      fireSuccessConfetti();
+    }
+  }, [passed]);
 
   return (
     <motion.div
@@ -115,6 +123,11 @@ export function ExerciseResult({
           <RefreshCw className="h-4 w-4 mr-2" />
           Try Again
         </Button>
+      )}
+
+      {/* Milestone completion check widget */}
+      {passed && exercise.milestoneId && (
+        <MilestoneCompletionCheck milestoneId={exercise.milestoneId} />
       )}
     </motion.div>
   );

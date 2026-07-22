@@ -591,4 +591,118 @@ export class ProgressService {
       recentActivity: recentActivity,
     };
   }
+
+  // ── GET MILESTONE SUMMARY ─────────────────────────────
+
+  async getMilestoneSummary(userId: string, milestoneId: string) {
+    const milestone = await this.prisma.milestone.findUnique({
+      where: { id: milestoneId },
+      include: {
+        modules: {
+          include: {
+            resources: { select: { id: true } },
+          },
+        },
+        exercises: {
+          include: {
+            submissions: {
+              where: { userId },
+              orderBy: { createdAt: 'desc' },
+              take: 1,
+              select: { score: true, status: true },
+            },
+          },
+        },
+        learningPath: {
+          select: {
+            id: true,
+            title: true,
+            totalMilestones: true,
+            milestones: {
+              orderBy: { sequenceOrder: 'asc' },
+              select: {
+                id: true,
+                title: true,
+                sequenceOrder: true,
+                isLocked: true,
+                completedAt: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!milestone) throw new NotFoundException('Milestone not found');
+
+    // Compute total resources completed in this milestone
+    const moduleIds = milestone.modules.map((m) => m.id);
+    const completedResources = await this.prisma.resourceCompletion.count({
+      where: { userId, moduleId: { in: moduleIds } },
+    });
+    const totalResources = milestone.modules.reduce(
+      (sum, m) => sum + m.resources.length,
+      0,
+    );
+
+    // Exercise scores
+    const exerciseResults = milestone.exercises.map((ex) => ({
+      title: ex.title,
+      type: ex.exerciseType,
+      score: ex.submissions[0]?.score ?? null,
+      passed: ex.submissions[0]?.status === 'PASSED',
+    }));
+
+    const avgExerciseScore =
+      exerciseResults.length > 0
+        ? exerciseResults.reduce((sum, e) => sum + (e.score ?? 0), 0) /
+          exerciseResults.length
+        : null;
+
+    // Find next milestone
+    const currentIdx = milestone.learningPath.milestones.findIndex(
+      (m) => m.id === milestoneId,
+    );
+    const nextMilestone =
+      milestone.learningPath.milestones[currentIdx + 1] ?? null;
+
+    // Time spent on this milestone
+    const timeSpent = await this.prisma.resourceCompletion.aggregate({
+      where: { userId, moduleId: { in: moduleIds } },
+      _sum: { timeSpentSeconds: true },
+    });
+    const timeSpentMinutes = Math.ceil(
+      (timeSpent._sum.timeSpentSeconds ?? 0) / 60,
+    );
+
+    return {
+      milestone: {
+        id: milestone.id,
+        title: milestone.title,
+        description: milestone.description,
+        sequenceOrder: milestone.sequenceOrder,
+        completedAt: milestone.completedAt,
+        estimatedHours: milestone.estimatedHours,
+        learningObjectives: milestone.learningObjectives,
+      },
+      stats: {
+        totalResources,
+        completedResources,
+        timeSpentMinutes,
+        exerciseResults,
+        avgExerciseScore,
+        moduleCount: milestone.modules.length,
+      },
+      path: {
+        id: milestone.learningPath.id,
+        title: milestone.learningPath.title,
+        totalMilestones: milestone.learningPath.totalMilestones,
+        completedMilestones: milestone.learningPath.milestones.filter(
+          (m) => m.completedAt !== null,
+        ).length,
+      },
+      nextMilestone,
+      isPathComplete: !nextMilestone,
+    };
+  }
 }

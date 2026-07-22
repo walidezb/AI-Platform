@@ -4,23 +4,33 @@ import {
   Controller,
   ForbiddenException,
   Get,
+  Headers,
+  Logger,
   NotFoundException,
   Param,
+  Patch,
   Post,
+  UnauthorizedException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { UserRole } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { QueueService } from '../queues/queue.service';
 import { ProgressService } from '../progress/progress.service';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { Public } from '../auth/decorators/public.decorator';
+import { SkipThrottle } from '@nestjs/throttler';
 
 @Controller('exercises')
 export class ExercisesController {
+  private readonly logger = new Logger(ExercisesController.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly queuesService: QueueService,
     private readonly progressService: ProgressService,
+    private readonly config: ConfigService,
   ) {}
 
   // ── GET EXERCISE DETAIL ────────────────────────────────
@@ -211,6 +221,52 @@ export class ExercisesController {
       where: { id: submissionId, userId: user.id },
     });
     if (!submission) throw new NotFoundException('Submission not found');
+    return { success: true, data: submission };
+  }
+
+  // ── UPDATE SUBMISSION (INTERNAL FROM FASTAPI) ─────────────
+  @Patch('/internal/submissions/:submissionId')
+  @Public()
+  @SkipThrottle()
+  async updateSubmission(
+    @Param('submissionId') submissionId: string,
+    @Body()
+    body: {
+      score: number;
+      feedback: string;
+      status: 'PASSED' | 'FAILED';
+      milestoneId: string;
+      userId: string;
+    },
+    @Headers('x-internal-secret') secret: string,
+  ) {
+    if (secret !== this.config.get('INTERNAL_SERVICE_SECRET')) {
+      throw new UnauthorizedException();
+    }
+
+    // Update submission in DB
+    const submission = await this.prisma.exerciseSubmission.update({
+      where: { id: submissionId },
+      data: {
+        score: body.score,
+        feedback: body.feedback,
+        status: body.status,
+      },
+    });
+
+    this.logger.log(
+      `Submission ${submissionId} evaluated: ` +
+        `${body.status} (${body.score.toFixed(1)}%)`,
+    );
+
+    // If passed: check if milestone is now complete
+    if (body.status === 'PASSED') {
+      await this.progressService.checkMilestoneProgress(
+        body.userId,
+        body.milestoneId,
+      );
+    }
+
     return { success: true, data: submission };
   }
 

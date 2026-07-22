@@ -3,6 +3,7 @@ export const QUEUE_NAMES = {
   PATH_GENERATION: 'path-generation-queue',
   RESOURCE_CURATION: 'resource-curation-queue',
   EXERCISE_GENERATION: 'exercise-generation-queue',
+  EXERCISE_EVALUATION: 'exercise-evaluation-queue',
   NOTIFICATION: 'notification-queue',
 } as const;
 
@@ -11,6 +12,7 @@ export const JOB_NAMES = {
   GENERATE_PATH: 'path.generate',
   CURATE_MODULE_RESOURCES: 'resources.curate',
   GENERATE_EXERCISES: 'exercises.generate',
+  EVALUATE_EXERCISE: 'exercise.evaluate',
   SEND_PATH_READY: 'notification.path_ready',
   SEND_MILESTONE_COMPLETE: 'notification.milestone_complete',
   SEND_STALLED_ALERT: 'notification.stalled_alert',

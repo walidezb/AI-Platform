@@ -64,6 +64,19 @@ export class ProgressController {
     return { success: true, data: result };
   }
 
+  @Get('milestone/:milestoneId/summary')
+  @Roles(UserRole.LEARNER, UserRole.MANAGER, UserRole.ORG_ADMIN)
+  async getMilestoneSummary(
+    @Param('milestoneId') milestoneId: string,
+    @CurrentUser() user: any,
+  ) {
+    const result = await this.service.getMilestoneSummary(
+      user.id,
+      milestoneId,
+    );
+    return { success: true, data: result };
+  }
+
   @Get('summary')
   @Roles(UserRole.LEARNER, UserRole.MANAGER, UserRole.ORG_ADMIN)
   async getProgressSummary(@CurrentUser() user: any) {

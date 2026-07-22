@@ -19,6 +19,8 @@ export class QueueService {
     private resourceQueue: Bull.Queue,
     @InjectQueue(QUEUE_NAMES.EXERCISE_GENERATION)
     private exerciseQueue: Bull.Queue,
+    @InjectQueue(QUEUE_NAMES.EXERCISE_EVALUATION)
+    private exerciseEvaluationQueue: Bull.Queue,
     @InjectQueue(QUEUE_NAMES.NOTIFICATION)
     private notificationQueue: Bull.Queue,
   ) {}
@@ -61,9 +63,14 @@ export class QueueService {
     userId: string;
     milestoneId: string;
   }) {
-    return this.exerciseQueue.add('EVALUATE_EXERCISE', payload, {
+    return this.exerciseEvaluationQueue.add(payload, {
       attempts: 3,
-      timeout: 60000,
+      backoff: {
+        type: 'exponential',
+        delay: 5000, // 5s, 25s, 125s
+      },
+      removeOnComplete: 100,
+      removeOnFail: 50,
     });
   }
 
@@ -83,6 +90,7 @@ export class QueueService {
       this.pathQueue,
       this.resourceQueue,
       this.exerciseQueue,
+      this.exerciseEvaluationQueue,
       this.notificationQueue,
     ];
     return Promise.all(
