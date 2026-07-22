@@ -3,6 +3,14 @@ import { ConfigService } from '@nestjs/config';
 import * as sgMailModule from '@sendgrid/mail';
 const sgMail = (sgMailModule as any).default || sgMailModule;
 
+export interface StalledLearnerEmailItem {
+  fullName: string;
+  department: string | null;
+  daysSinceActive: number | null;
+  completionPct: number;
+  pathTitle: string;
+}
+
 @Injectable()
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
@@ -169,7 +177,6 @@ export class EmailService {
     milestonesCount: number;
     estimatedHours: number;
   }) {
-    // Placeholder — full implementation in Phase 3 Step 3.6
     this.logger.log(`Path ready email queued for ${params.to}`);
   }
 
@@ -277,6 +284,279 @@ export class EmailService {
       this.logger.log(`Budget exceeded email sent to ${params.to}`);
     } catch (err) {
       this.logger.error(`Failed to send budget exceeded email to ${params.to}`, err);
+    }
+  }
+
+  /* ── Manager digest: stalled employees ── */
+  async sendStalledManagerAlert(params: {
+    to: string;
+    managerName: string;
+    stalled: StalledLearnerEmailItem[];
+    dashboardUrl: string;
+  }): Promise<void> {
+    const { to, managerName, stalled, dashboardUrl } = params;
+    const fromEmail =
+      this.config.get<string>('SENDGRID_FROM_EMAIL') || 'no-reply@ezlearn.ai';
+    const appUrl = this.config.get<string>('APP_URL') || 'http://localhost:3000';
+
+    const rows = stalled
+      .map(
+        (s) => `
+    <tr>
+      <td style="padding:10px 12px;border-bottom:1px solid #1e293b;
+                 font-size:14px;color:#e2e8f0">
+        ${s.fullName}
+      </td>
+      <td style="padding:10px 12px;border-bottom:1px solid #1e293b;
+                 font-size:14px;color:#94a3b8">
+        ${s.department ?? '—'}
+      </td>
+      <td style="padding:10px 12px;border-bottom:1px solid #1e293b;
+                 font-size:14px;color:#f59e0b;text-align:center">
+        ${s.daysSinceActive !== null ? `${s.daysSinceActive}d` : 'Never'}
+      </td>
+      <td style="padding:10px 12px;border-bottom:1px solid #1e293b;
+                 font-size:14px;color:#94a3b8;text-align:center">
+        ${Math.round(s.completionPct)}%
+      </td>
+      <td style="padding:10px 12px;border-bottom:1px solid #1e293b;
+                 font-size:13px;color:#94a3b8">
+        ${s.pathTitle}
+      </td>
+    </tr>
+  `,
+      )
+      .join('');
+
+    const html = `
+      <div style="font-family:'Inter',sans-serif;max-width:600px;
+                  margin:0 auto;background:#0f0f1a;color:#e2e8f0;
+                  border-radius:12px;overflow:hidden">
+
+        <!-- Header -->
+        <div style="background:linear-gradient(135deg,#6366f1,#8b5cf6);
+                    padding:28px 32px">
+          <div style="font-size:22px;font-weight:700;color:white">
+            ⚠️ Stalled Learners Alert
+          </div>
+          <div style="font-size:14px;color:rgba(255,255,255,0.8);margin-top:6px">
+            ${stalled.length} employee${stalled.length > 1 ? 's have' : ' has'} been inactive
+          </div>
+        </div>
+
+        <!-- Body -->
+        <div style="padding:28px 32px">
+          <p style="margin:0 0 20px;font-size:15px;color:#94a3b8">
+            Hi ${managerName},
+          </p>
+          <p style="margin:0 0 24px;font-size:15px;line-height:1.6">
+            The following employees haven't made learning progress recently.
+            A quick check-in can make a big difference! 💪
+          </p>
+
+          <!-- Table -->
+          <table style="width:100%;border-collapse:collapse;
+                        background:#1a1a2e;border-radius:8px;
+                        overflow:hidden">
+            <thead>
+              <tr style="background:#0f172a">
+                <th style="padding:10px 12px;text-align:left;
+                           font-size:11px;color:#6b7280;
+                           text-transform:uppercase;letter-spacing:0.05em">
+                  Employee
+                </th>
+                <th style="padding:10px 12px;text-align:left;
+                           font-size:11px;color:#6b7280;
+                           text-transform:uppercase;letter-spacing:0.05em">
+                  Dept
+                </th>
+                <th style="padding:10px 12px;text-align:center;
+                           font-size:11px;color:#6b7280;
+                           text-transform:uppercase;letter-spacing:0.05em">
+                  Days Inactive
+                </th>
+                <th style="padding:10px 12px;text-align:center;
+                           font-size:11px;color:#6b7280;
+                           text-transform:uppercase;letter-spacing:0.05em">
+                  Progress
+                </th>
+                <th style="padding:10px 12px;text-align:left;
+                           font-size:11px;color:#6b7280;
+                           text-transform:uppercase;letter-spacing:0.05em">
+                  Path
+                </th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+
+          <!-- CTA -->
+          <div style="text-align:center;margin-top:28px">
+            <a href="${dashboardUrl}"
+               style="display:inline-block;padding:14px 32px;
+                      background:linear-gradient(135deg,#6366f1,#8b5cf6);
+                      color:white;text-decoration:none;border-radius:8px;
+                      font-weight:600;font-size:15px">
+              View Team Dashboard →
+            </a>
+          </div>
+
+          <p style="margin-top:24px;font-size:12px;color:#475569;
+                    text-align:center">
+            Nudge emails have also been sent to these employees automatically.
+            To adjust alert settings, visit your
+            <a href="${appUrl}/manage/settings"
+               style="color:#6366f1">
+              org settings
+            </a>.
+          </p>
+        </div>
+      </div>
+    `;
+
+    try {
+      await sgMail.send({
+        to,
+        from: { email: fromEmail, name: 'EZ LEARN' },
+        subject: `⚠️ ${stalled.length} learner${stalled.length > 1 ? 's' : ''} inactive — action needed`,
+        html,
+      });
+      this.logger.log(`Stalled manager alert email sent to ${to}`);
+    } catch (err) {
+      this.logger.error(`Failed to send stalled manager alert email to ${to}`, err);
+    }
+  }
+
+  /* ── Individual employee nudge ── */
+  async sendLearnerNudge(params: {
+    to: string;
+    employeeName: string;
+    pathTitle: string;
+    completionPct: number;
+    resumeUrl: string;
+    triggeredBy: 'SCHEDULED' | 'MANUAL';
+  }): Promise<void> {
+    const {
+      to,
+      employeeName,
+      pathTitle,
+      completionPct,
+      resumeUrl,
+      triggeredBy,
+    } = params;
+
+    const firstName = employeeName.split(' ')[0];
+    const barWidth = Math.round(completionPct);
+    const fromEmail =
+      this.config.get<string>('SENDGRID_FROM_EMAIL') || 'no-reply@ezlearn.ai';
+
+    const html = `
+      <div style="font-family:'Inter',sans-serif;max-width:520px;
+                  margin:0 auto;background:#0f0f1a;color:#e2e8f0;
+                  border-radius:12px;overflow:hidden">
+
+        <!-- Header -->
+        <div style="background:linear-gradient(135deg,#6366f1,#8b5cf6);
+                    padding:32px;text-align:center">
+          <div style="font-size:48px">👋</div>
+          <div style="font-size:22px;font-weight:700;color:white;
+                      margin-top:12px">
+            We miss you, ${firstName}!
+          </div>
+        </div>
+
+        <!-- Body -->
+        <div style="padding:32px">
+          <p style="font-size:15px;line-height:1.7;color:#94a3b8;
+                    margin:0 0 20px">
+            Your learning journey is waiting for you. You've made great
+            progress — don't let it go to waste! 🚀
+          </p>
+
+          <!-- Progress card -->
+          <div style="background:#1a1a2e;border-radius:10px;
+                      padding:20px;margin-bottom:24px">
+            <div style="font-size:13px;color:#6b7280;margin-bottom:4px">
+              Your current path
+            </div>
+            <div style="font-size:16px;font-weight:600;margin-bottom:14px">
+              ${pathTitle}
+            </div>
+
+            <!-- Progress bar -->
+            <div style="display:flex;align-items:center;gap:12px">
+              <div style="flex:1;height:8px;background:#0f172a;
+                          border-radius:4px;overflow:hidden">
+                <div style="height:100%;width:${barWidth}%;
+                            background:linear-gradient(90deg,#6366f1,#8b5cf6);
+                            border-radius:4px">
+                </div>
+              </div>
+              <div style="font-size:14px;font-weight:700;
+                          color:#6366f1;min-width:36px;text-align:right">
+                ${barWidth}%
+              </div>
+            </div>
+            <div style="font-size:12px;color:#475569;margin-top:6px">
+              ${
+                barWidth < 25
+                  ? "You're just getting started — the first milestone is the hardest!"
+                  : barWidth < 50
+                  ? "You're making great progress — keep the momentum going!"
+                  : barWidth < 75
+                  ? "You're more than halfway there — the finish line is in sight!"
+                  : "You're almost done — one final push!"
+              }
+            </div>
+          </div>
+
+          <!-- CTA -->
+          <div style="text-align:center">
+            <a href="${resumeUrl}"
+               style="display:inline-block;padding:16px 40px;
+                      background:linear-gradient(135deg,#6366f1,#8b5cf6);
+                      color:white;text-decoration:none;border-radius:10px;
+                      font-weight:700;font-size:16px">
+              Continue Learning →
+            </a>
+          </div>
+
+          <!-- Motivational tip -->
+          <div style="margin-top:28px;padding:16px;background:#1e293b;
+                      border-radius:8px;border-left:3px solid #6366f1">
+            <div style="font-size:12px;color:#6366f1;font-weight:600;
+                        margin-bottom:4px">
+              💡 TIP
+            </div>
+            <div style="font-size:13px;color:#94a3b8;line-height:1.5">
+              Even 15 minutes a day adds up fast. Try one module right now
+              and build that streak! 🔥
+            </div>
+          </div>
+
+          <p style="margin-top:20px;font-size:11px;color:#334155;
+                    text-align:center">
+            This reminder was sent by your organization's learning platform.
+            ${
+              triggeredBy === 'MANUAL'
+                ? 'Your manager sent this nudge.'
+                : 'Automated daily check-in.'
+            }
+          </p>
+        </div>
+      </div>
+    `;
+
+    try {
+      await sgMail.send({
+        to,
+        from: { email: fromEmail, name: 'EZ LEARN' },
+        subject: `Hey ${firstName}, your learning journey is waiting! 👋`,
+        html,
+      });
+      this.logger.log(`Nudge email sent to ${to}`);
+    } catch (err) {
+      this.logger.error(`Failed to send nudge email to ${to}`, err);
     }
   }
 }

@@ -1,25 +1,94 @@
 'use client';
 
 import React from 'react';
-import { Users } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useQuery } from '@tanstack/react-query';
+import { useAuth } from '@clerk/nextjs';
+import { UserPlus } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
-import { EmptyState } from '@/components/ui/EmptyState';
 import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { LoadingSkeleton } from '@/components/ui/LoadingSkeleton';
+import { EmployeeTable } from '@/components/manager/EmployeeTable';
+import { FilterToolbar } from '@/components/manager/FilterToolbar';
+import { useTeamOverview } from '@/hooks/manager/useTeamOverview';
+import { useTeamFilters } from '@/hooks/manager/useTeamFilters';
+import { createApiClient } from '@/lib/api-client';
+
+type Dept = { id: string; name: string };
 
 export default function TeamPage() {
+  const router = useRouter();
+  const { getToken } = useAuth();
+  const { filters, setFilters } = useTeamFilters();
+  const { data, isLoading } = useTeamOverview(filters);
+
+  // Fetch departments for filter dropdown
+  const { data: departments } = useQuery({
+    queryKey: ['org-departments'],
+    queryFn: async () => {
+      const client = createApiClient(getToken);
+      const res = await client.get<{ success: boolean; data: Dept[] }>('/departments');
+      return res.data;
+    },
+    select: (data) => data.map((d) => d.name),
+    staleTime: 10 * 60_000,
+  });
+
+  const employees = data?.employees ?? [];
+  const pagination = data?.pagination;
+  const stats = data?.stats;
+
+  const distinctRoles = React.useMemo(() => {
+    const all = (data?.employees ?? [])
+      .map((e) => e.jobTitle)
+      .filter((r): r is string => !!r);
+    return [...new Set(all)].sort();
+  }, [data]);
+
   return (
-    <div className="space-y-6">
+    <div className="p-6 space-y-5">
       <PageHeader
         title="My Team"
-        subtitle="Manage your employees and their learning progress"
-        action={<Button className="bg-gradient-primary border-0 text-white font-semibold">Invite Employee</Button>}
+        subtitle={
+          pagination
+            ? `${pagination.total} of ${stats?.total ?? 0} employees`
+            : 'Loading...'
+        }
+        action={
+          <Button
+            onClick={() => router.push('/manage/invitations')}
+            className="bg-gradient-primary border-0 text-white font-semibold"
+          >
+            <UserPlus className="h-4 w-4 mr-2" />
+            Invite Employee
+          </Button>
+        }
       />
-      <EmptyState
-        icon={Users}
-        title="No team members yet"
-        description="Invite your first employee to get started"
-        action={{ label: 'Send Invitations', onClick: () => {} }}
-      />
+
+      <Card className="p-5 space-y-5 border-slate-800 bg-slate-900/60">
+        {/* Filter toolbar */}
+        <FilterToolbar
+          departments={departments ?? []}
+          roles={distinctRoles}
+          filters={filters}
+          total={pagination?.total ?? 0}
+          allTotal={stats?.total ?? 0}
+          onChange={setFilters}
+        />
+
+        {/* Table */}
+        {isLoading ? (
+          <LoadingSkeleton className="h-64" />
+        ) : (
+          <EmployeeTable
+            employees={employees}
+            onViewEmployee={(id) => router.push(`/manage/team/${id}`)}
+            serverPagination={pagination}
+            onPageChange={(page) => setFilters({ ...filters, page })}
+          />
+        )}
+      </Card>
     </div>
   );
 }

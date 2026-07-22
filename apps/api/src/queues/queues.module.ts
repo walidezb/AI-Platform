@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { BullModule } from '@nestjs/bull';
 import { QUEUE_NAMES } from './queue.constants';
 import { QueueService } from './queue.service';
@@ -9,6 +9,7 @@ import { ExerciseGenerationProcessor } from './processors/exercise-generation.pr
 import { ExerciseEvaluationProcessor } from './processors/exercise-evaluation.processor';
 import { NotificationProcessor } from './processors/notification.processor';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { AlertsModule } from '../alerts/alerts.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
       { name: QUEUE_NAMES.NOTIFICATION },
     ),
     NotificationsModule,
+    forwardRef(() => AlertsModule),
   ],
   providers: [
     QueueService,

@@ -100,6 +100,14 @@ enum InvitationStatus {
   EXPIRED
 }
 
+enum InviteStatus {
+  PENDING
+  IN_PROGRESS
+  ACCEPTED
+  REVOKED
+  EXPIRED
+}
+
 enum NotificationType {
   PATH_READY
   MILESTONE_COMPLETED
@@ -108,6 +116,7 @@ enum NotificationType {
   TEAM_PROGRESS
   BUDGET_WARNING
   BUDGET_EXCEEDED
+  STALLED_ALERT
   SYSTEM
 }
 
@@ -142,6 +151,20 @@ model Organization {
   departments     Department[]
   notifications   Notification[]
   roleDefinitions RoleDefinition[]
+  alertSettings   AlertSettings?
+}
+
+model AlertSettings {
+  id                  String       @id @default(cuid())
+  organizationId      String       @unique
+  organization        Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  stalledAfterDays    Int          @default(7)
+  atRiskAfterDays     Int          @default(14)
+  enableManagerAlerts Boolean      @default(true)
+  enableLearnerNudges Boolean      @default(true)
+  alertHour           Int          @default(9)
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
 }
 
 model Department {
@@ -188,6 +211,10 @@ model User {
   onboardingTokenExpiry DateTime?
   onboardingCompletedAt DateTime?
   invitationStatus      InvitationStatus @default(PENDING)
+  invitedAt             DateTime?
+  inviteExpiresAt       DateTime?
+  inviteOpenedAt        DateTime?
+  inviteStatus          InviteStatus     @default(PENDING)
   lastActiveAt          DateTime?
   createdAt             DateTime         @default(now())
   updatedAt             DateTime         @updatedAt

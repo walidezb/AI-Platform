@@ -8,6 +8,7 @@ import {
 import { Logger } from '@nestjs/common';
 import * as Bull from 'bull';
 import { NotificationsService } from '../../notifications/notifications.service';
+import { AlertsService } from '../../alerts/alerts.service';
 import { UserRole } from '@prisma/client';
 import { QUEUE_NAMES } from '../queue.constants';
 
@@ -15,7 +16,17 @@ import { QUEUE_NAMES } from '../queue.constants';
 export class NotificationProcessor {
   private readonly logger = new Logger(NotificationProcessor.name);
 
-  constructor(private readonly notificationService: NotificationsService) {}
+  constructor(
+    private readonly notificationService: NotificationsService,
+    private readonly alertsService: AlertsService,
+  ) {}
+
+  @Process('daily-stalled-alerts')
+  async processDailyAlerts(job: Bull.Job): Promise<void> {
+    this.logger.log('Processing daily stalled learner alerts...');
+    await this.alertsService.runDailyAlerts();
+    this.logger.log('Daily stalled alert run complete');
+  }
 
   @Process('PATH_READY')
   async handlePathReady(

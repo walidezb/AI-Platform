@@ -1,4 +1,13 @@
-import { Controller, Post, Get, Delete, Body, Param } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Delete,
+  Body,
+  Param,
+  Res,
+} from '@nestjs/common';
+import { Response } from 'express';
 import { InvitationsService } from './invitations.service';
 import { InviteEmployeeDto } from './dto/invite-employee.dto';
 import { BulkInviteDto } from './dto/bulk-invite.dto';
@@ -37,6 +46,44 @@ export class InvitationsController {
     return { success: true, data: result };
   }
 
+  @Get('stats')
+  @Roles('MANAGER', 'ORG_ADMIN')
+  async getStats(@OrgId() orgId: string) {
+    return {
+      success: true,
+      data: await this.service.getInviteStats(orgId),
+    };
+  }
+
+  @Get('export')
+  @Roles('MANAGER', 'ORG_ADMIN')
+  /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+  async exportCsv(@OrgId() orgId: string, @Res() res: any) {
+    const csv = await this.service.exportInvitationsCsv(orgId);
+    const filename = `invitations-${new Date().toISOString().split('T')[0]}.csv`;
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(csv);
+  }
+
+  @Post('bulk-revoke')
+  @Roles('MANAGER', 'ORG_ADMIN')
+  async bulkRevoke(
+    @Body() body: { userIds: string[] },
+    @CurrentUser() user: Prisma.User,
+    @OrgId() orgId: string,
+  ) {
+    await Promise.all(
+      body.userIds.map((id) =>
+        this.service.revokeInvite(id, user.id, orgId),
+      ),
+    );
+    return {
+      success: true,
+      message: `${body.userIds.length} invites revoked`,
+    };
+  }
+
   @Get()
   @Roles('MANAGER', 'ORG_ADMIN')
   async list(@OrgId() orgId: string) {
@@ -58,19 +105,20 @@ export class InvitationsController {
     return { success: true };
   }
 
-  @Get('stats')
-  @Roles('MANAGER', 'ORG_ADMIN')
-  async getStats(@OrgId() orgId: string) {
-    return {
-      success: true,
-      data: await this.service.getInvitationStats(orgId),
-    };
-  }
-
   @Get(':userId/link')
   @Roles('MANAGER', 'ORG_ADMIN')
   async getLink(@Param('userId') userId: string, @OrgId() orgId: string) {
     const link = await this.service.getInviteLink(userId, orgId);
+    return { success: true, data: { link } };
+  }
+
+  @Post(':userId/regenerate-link')
+  @Roles('MANAGER', 'ORG_ADMIN')
+  async regenerateLink(
+    @Param('userId') userId: string,
+    @OrgId() orgId: string,
+  ) {
+    const link = await this.service.regenerateLink(userId, orgId);
     return { success: true, data: { link } };
   }
 

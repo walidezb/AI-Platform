@@ -25,6 +25,23 @@ export class QueueService {
     private notificationQueue: Bull.Queue,
   ) {}
 
+  // Schedule daily stalled learner detection job
+  async scheduleDailyAlerts(): Promise<void> {
+    await this.notificationQueue.add(
+      'daily-stalled-alerts',
+      { type: 'DAILY_STALLED_ALERTS' },
+      {
+        repeat: {
+          cron: '0 9 * * *', // 09:00 UTC every day
+          tz: 'UTC',
+        },
+        jobId: 'daily-stalled-alerts', // prevents duplicates
+        removeOnComplete: { count: 7 }, // keep last 7 logs
+        removeOnFail: { count: 3 },
+      },
+    );
+  }
+
   // Called when AI service reports assessment complete
   async addAssessmentCompleted(payload: AssessmentCompletedPayload) {
     return this.assessmentQueue.add(

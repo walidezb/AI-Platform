@@ -1,6 +1,12 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 
+export function LoadingSkeleton({ className }: { className?: string }) {
+  return (
+    <div className={cn("w-full bg-slate-800/50 rounded animate-pulse", className)} />
+  );
+}
+
 export function SkeletonCard() {
   return (
     <div className="w-full bg-card border border-border rounded-xl p-6 shimmer">

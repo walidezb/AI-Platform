@@ -1,4 +1,4 @@
-import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
+import { Module, NestModule, MiddlewareConsumer, OnModuleInit } from '@nestjs/common';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { EventEmitterModule } from '@nestjs/event-emitter';
@@ -14,6 +14,7 @@ import { ClerkGuard } from './auth/clerk.guard';
 import { RolesGuard } from './auth/roles.guard';
 import { OrgScopeInterceptor } from './auth/org-scope.interceptor';
 import { QueuesModule } from './queues/queues.module';
+import { QueueService } from './queues/queue.service';
 import { LoggerModule } from './logger/logger.module';
 import { RequestLoggerMiddleware } from './middleware/request-logger.middleware';
 import { AuditMiddleware } from './middleware/audit.middleware';
@@ -30,6 +31,7 @@ import { ResourcesModule } from './resources/resources.module';
 import { ProgressModule } from './progress/progress.module';
 import { ExercisesModule } from './exercises/exercises.module';
 import { UploadsModule } from './uploads/uploads.module';
+import { AlertsModule } from './alerts/alerts.module';
 
 import { InternalController } from './internal/internal.controller';
 
@@ -94,6 +96,7 @@ import { InternalController } from './internal/internal.controller';
     ProgressModule,
     ExercisesModule,
     UploadsModule,
+    AlertsModule,
   ],
   controllers: [AppController, InternalController],
   providers: [
@@ -116,7 +119,13 @@ import { InternalController } from './internal/internal.controller';
     },
   ],
 })
-export class AppModule implements NestModule {
+export class AppModule implements NestModule, OnModuleInit {
+  constructor(private readonly queueService: QueueService) {}
+
+  async onModuleInit() {
+    await this.queueService.scheduleDailyAlerts();
+  }
+
   configure(consumer: MiddlewareConsumer) {
     consumer.apply(RequestLoggerMiddleware, AuditMiddleware).forRoutes('*');
   }

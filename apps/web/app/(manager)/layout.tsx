@@ -4,7 +4,6 @@ import { requireAuth } from '@/lib/auth';
 import { serverFetch } from '@/lib/api-server';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 
-
 interface User {
   id: string;
   email: string;
@@ -46,8 +45,8 @@ export default async function ManagerLayout({
   const navItems = [
     { label: 'Dashboard',   href: '/manage/dashboard',   icon: 'dashboard' as const },
     { label: 'My Team',     href: '/manage/team',        icon: 'users' as const },
-    { label: 'Invitations', href: '/manage/invitations', icon: 'mail' as const },
     { label: 'Analytics',   href: '/manage/analytics',   icon: 'analytics' as const },
+    { label: 'Invitations', href: '/manage/invitations', icon: 'mail' as const },
     { label: 'Settings',    href: '/manage/settings',    icon: 'settings' as const },
   ];
 

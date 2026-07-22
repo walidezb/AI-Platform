@@ -5,6 +5,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { DepartmentsManager } from '@/components/settings/DepartmentsManager';
 import { OrgSettingsForm } from '@/components/settings/OrgSettingsForm';
 import { BudgetWidget } from '@/components/settings/BudgetWidget';
+import { AlertSettingsForm } from '@/components/settings/AlertSettingsForm';
 
 interface User {
   id: string;
@@ -27,15 +28,30 @@ export function SettingsView({ user }: SettingsViewProps) {
   return (
     <div className="space-y-8 pb-12">
       <Tabs defaultValue="organization" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 max-w-[500px] mb-8 bg-slate-900 border border-slate-800 p-1">
-          <TabsTrigger value="organization" className="data-[state=active]:bg-primary/20 data-[state=active]:text-white font-semibold">
+        <TabsList className="grid w-full grid-cols-4 max-w-[650px] mb-8 bg-slate-900 border border-slate-800 p-1">
+          <TabsTrigger
+            value="organization"
+            className="data-[state=active]:bg-primary/20 data-[state=active]:text-white font-semibold"
+          >
             Organization
           </TabsTrigger>
-          <TabsTrigger value="departments" className="data-[state=active]:bg-primary/20 data-[state=active]:text-white font-semibold">
+          <TabsTrigger
+            value="departments"
+            className="data-[state=active]:bg-primary/20 data-[state=active]:text-white font-semibold"
+          >
             Departments & Roles
           </TabsTrigger>
-          <TabsTrigger value="billing" className="data-[state=active]:bg-primary/20 data-[state=active]:text-white font-semibold">
+          <TabsTrigger
+            value="billing"
+            className="data-[state=active]:bg-primary/20 data-[state=active]:text-white font-semibold"
+          >
             Billing
+          </TabsTrigger>
+          <TabsTrigger
+            value="alerts"
+            className="data-[state=active]:bg-primary/20 data-[state=active]:text-white font-semibold"
+          >
+            Alerts
           </TabsTrigger>
         </TabsList>
 
@@ -52,6 +68,11 @@ export function SettingsView({ user }: SettingsViewProps) {
         {/* ================= TAB 3: BILLING ================= */}
         <TabsContent value="billing">
           <BudgetWidget />
+        </TabsContent>
+
+        {/* ================= TAB 4: ALERTS ================= */}
+        <TabsContent value="alerts">
+          <AlertSettingsForm />
         </TabsContent>
       </Tabs>
     </div>
