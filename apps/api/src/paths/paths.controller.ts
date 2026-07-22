@@ -86,11 +86,229 @@ export class PathsController {
     return { success: true, data: progress };
   }
 
-  @Get('paths/:id')
+  @Get('paths/:pathId')
   @Roles(UserRole.LEARNER, UserRole.MANAGER, UserRole.ORG_ADMIN)
-  async getPath(@Param('id') id: string, @CurrentUser() user: any) {
-    const path = await this.service.getPathById(id, user);
-    return { success: true, data: path };
+  async getPathWithDetails(
+    @Param('pathId') pathId: string,
+    @CurrentUser() user: any,
+  ) {
+    const path = (await this.prisma.learningPath.findFirst({
+      where: {
+        id: pathId,
+        organizationId: user.organizationId, // org-scoped
+      },
+      include: {
+        milestones: {
+          orderBy: { sequenceOrder: 'asc' },
+          include: {
+            modules: {
+              orderBy: { sequenceOrder: 'asc' },
+              include: {
+                resources: {
+                  orderBy: { sequenceOrder: 'asc' },
+                  select: {
+                    id: true,
+                    title: true,
+                    url: true,
+                    resourceType: true,
+                    durationMinutes: true,
+                    sourcePlatform: true,
+                    qualityScore: true,
+                  },
+                },
+              },
+            },
+            exercises: {
+              select: {
+                id: true,
+                title: true,
+                exerciseType: true,
+                passingScore: true,
+              },
+            },
+          },
+        },
+      },
+    })) as any;
+
+    if (!path) throw new NotFoundException('Path not found');
+
+    // Attach completion data for this user
+    const completions = await this.prisma.resourceCompletion.findMany({
+      where: { userId: user.id },
+      select: { resourceId: true },
+    });
+    const completedResourceIds = new Set(completions.map((c) => c.resourceId));
+
+    // Attach exercise submission status
+    const submissions = await this.prisma.exerciseSubmission.findMany({
+      where: { userId: user.id, status: { in: ['PASSED', 'EVALUATED'] } },
+      select: { exerciseId: true, status: true, score: true },
+    });
+    const passedExerciseIds = new Set(
+      submissions
+        .filter((s) => s.status === 'PASSED')
+        .map((s) => s.exerciseId),
+    );
+
+    // Compute per-module completion
+    const enrichedMilestones = path.milestones.map((milestone) => {
+      const enrichedModules = milestone.modules.map((module) => {
+        const totalResources = module.resources.length;
+        const doneResources = module.resources.filter((r) =>
+          completedResourceIds.has(r.id),
+        ).length;
+        const isModuleComplete =
+          totalResources > 0 && doneResources === totalResources;
+
+        return {
+          ...module,
+          completedResources: doneResources,
+          totalResources,
+          completionPct:
+            totalResources > 0
+              ? Math.round((doneResources / totalResources) * 100)
+              : 0,
+          isComplete: isModuleComplete,
+        };
+      });
+
+      const completedModules = enrichedModules.filter(
+        (m) => m.isComplete,
+      ).length;
+      const allExercisesPassed = milestone.exercises.every((e) =>
+        passedExerciseIds.has(e.id),
+      );
+
+      return {
+        ...milestone,
+        modules: enrichedModules,
+        completedModules,
+        totalModules: enrichedModules.length,
+        milestoneCompletionPct:
+          enrichedModules.length > 0
+            ? Math.round((completedModules / enrichedModules.length) * 100)
+            : 0,
+        allExercisesPassed,
+      };
+    });
+
+    const completedMilestones = enrichedMilestones.filter(
+      (m) => m.completedAt !== null,
+    ).length;
+
+    return {
+      success: true,
+      data: {
+        ...path,
+        milestones: enrichedMilestones,
+        completedMilestones,
+        overallCompletionPct:
+          path.totalMilestones > 0
+            ? Math.round((completedMilestones / path.totalMilestones) * 100)
+            : 0,
+      },
+    };
+  }
+
+  @Get('paths/modules/:moduleId')
+  @Roles(UserRole.LEARNER, UserRole.MANAGER, UserRole.ORG_ADMIN)
+  async getModuleWithResources(
+    @Param('moduleId') moduleId: string,
+    @CurrentUser() user: any,
+  ) {
+    const module = await this.prisma.module.findUnique({
+      where: { id: moduleId },
+      include: {
+        resources: { orderBy: { sequenceOrder: 'asc' } },
+        milestone: {
+          include: {
+            learningPath: {
+              select: {
+                id: true,
+                title: true,
+                organizationId: true,
+              },
+            },
+            modules: {
+              orderBy: { sequenceOrder: 'asc' },
+              select: {
+                id: true,
+                title: true,
+                moduleType: true,
+                estimatedMinutes: true,
+                isLocked: true,
+                sequenceOrder: true,
+              },
+            },
+            exercises: {
+              select: {
+                id: true,
+                title: true,
+                exerciseType: true,
+                isLocked: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!module) throw new NotFoundException('Module not found');
+
+    // Org scope check
+    if (module.milestone.learningPath.organizationId !== user.organizationId) {
+      throw new ForbiddenException();
+    }
+
+    // Get completed resources for this user in this module
+    const completions = await this.prisma.resourceCompletion.findMany({
+      where: { userId: user.id, moduleId },
+      select: { resourceId: true, completedAt: true },
+    });
+    const completedIds = new Set(completions.map((c) => c.resourceId));
+
+    // Enrich resources with completion state
+    const enrichedResources = module.resources.map((r) => ({
+      ...r,
+      isCompleted: completedIds.has(r.id),
+    }));
+
+    const completedCount = completedIds.size;
+    const totalCount = module.resources.length;
+    const isModuleComplete = totalCount > 0 && completedCount === totalCount;
+
+    // Find next + previous modules in the same milestone
+    const siblingModules = module.milestone.modules;
+    const currentIdx = siblingModules.findIndex((m) => m.id === moduleId);
+    const nextModule = siblingModules[currentIdx + 1] ?? null;
+    const prevModule = siblingModules[currentIdx - 1] ?? null;
+
+    return {
+      success: true,
+      data: {
+        module: {
+          ...module,
+          resources: enrichedResources,
+          completedResources: completedCount,
+          totalResources: totalCount,
+          completionPct:
+            totalCount > 0
+              ? Math.round((completedCount / totalCount) * 100)
+              : 0,
+          isComplete: isModuleComplete,
+        },
+        milestone: {
+          id: module.milestone.id,
+          title: module.milestone.title,
+          sequenceOrder: module.milestone.sequenceOrder,
+          modules: siblingModules,
+          exercises: module.milestone.exercises,
+        },
+        path: module.milestone.learningPath,
+        navigation: { nextModule, prevModule },
+      },
+    };
   }
 
   @Get('search/resources')

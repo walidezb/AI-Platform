@@ -55,6 +55,18 @@ export class QueueService {
     });
   }
 
+  async addExerciseEvaluationJob(payload: {
+    submissionId: string;
+    exerciseId: string;
+    userId: string;
+    milestoneId: string;
+  }) {
+    return this.exerciseQueue.add('EVALUATE_EXERCISE', payload, {
+      attempts: 3,
+      timeout: 60000,
+    });
+  }
+
   // Notification jobs
   async addNotificationJob(payload: NotificationPayload) {
     return this.notificationQueue.add(

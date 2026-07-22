@@ -8,6 +8,9 @@ interface StatsCardProps {
   label: string;
   value: string | number;
   icon: LucideIcon;
+  iconColor?: string;
+  iconBg?: string;
+  subValue?: React.ReactNode;
   trend?: { value: number; label: string };
   trendText?: string;
   variant?: 'default' | 'success' | 'warning' | 'info';
@@ -20,6 +23,9 @@ export function StatsCard({
   label,
   value,
   icon: Icon,
+  iconColor,
+  iconBg,
+  subValue,
   trend,
   trendText,
   variant = 'default',
@@ -76,16 +82,24 @@ export function StatsCard({
           <div className="text-muted-foreground text-sm font-medium tracking-tight">
             {label}
           </div>
-          <div className={cn("p-2.5 rounded-lg border", variantStyles[variant])}>
-            <Icon className="h-5 w-5" />
+          <div className={cn(
+            "p-2.5 rounded-lg border flex items-center justify-center shrink-0",
+            iconBg && iconColor ? cn(iconBg, iconColor, "border-transparent") : variantStyles[variant]
+          )}>
+            <Icon className={cn("h-5 w-5", iconColor)} />
           </div>
         </div>
         <div>
           <div className="font-heading text-3xl font-bold tracking-tight text-foreground mb-2 fade-in">
             {renderValue}
           </div>
+          {subValue && (
+            <div className="text-xs text-muted-foreground mt-1 select-none">
+              {subValue}
+            </div>
+          )}
           {trend && (
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1">
               <span className={cn(
                 "font-semibold",
                 trend.value >= 0 ? "text-success" : "text-destructive"

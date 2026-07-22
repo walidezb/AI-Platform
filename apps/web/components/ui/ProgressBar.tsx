@@ -10,6 +10,7 @@ interface ProgressBarProps {
   size?: 'sm' | 'md' | 'lg';
   variant?: 'default' | 'success' | 'warning';
   animated?: boolean; // animate fill on mount
+  className?: string;
 }
 
 export function ProgressBar({
@@ -19,6 +20,7 @@ export function ProgressBar({
   size = 'md',
   variant = 'default',
   animated = true,
+  className,
 }: ProgressBarProps) {
   const [width, setWidth] = useState(animated ? 0 : value);
 
@@ -46,7 +48,7 @@ export function ProgressBar({
   };
 
   return (
-    <div className="w-full">
+    <div className={cn("w-full", className)}>
       {(label || showPercentage) && (
         <div className="flex justify-between items-center mb-1.5 text-sm">
           {label && <span className="text-muted-foreground font-medium">{label}</span>}

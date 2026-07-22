@@ -338,22 +338,29 @@ model ResourceCompletion {
 }
 
 model Exercise {
-  id              String       @id @default(cuid())
-  milestoneId     String
-  moduleId        String?
-  title           String
-  instructions    String
-  exerciseType    ExerciseType
-  scenarioContext String?
-  expectedOutput  Json?
-  rubric          Json
-  maxAttempts     Int          @default(3)
-  passingScore    Float        @default(70)
-  isLocked        Boolean      @default(true)
-  createdAt       DateTime     @default(now())
+  id                    String               @id @default(cuid())
+  milestoneId           String
+  moduleId              String?
+  title                 String
+  instructions          String
+  exerciseType          ExerciseType
+  difficultyLevel       String?
+  estimatedMinutes      Int                  @default(30)
+  scenarioContext       String?
+  expectedOutput        Json?
+  rubric                Json
+  multipleChoiceOptions Json?
+  sampleAnswer          String?
+  hints                 String[]             @default([])
+  passingScore          Float                @default(70)
+  maxAttempts           Int                  @default(3)
+  tags                  String[]             @default([])
+  isLocked              Boolean              @default(true)
+  completedAt           DateTime?
+  createdAt             DateTime             @default(now())
 
-  milestone   Milestone            @relation(fields: [milestoneId], references: [id])
-  submissions ExerciseSubmission[]
+  milestone             Milestone            @relation(fields: [milestoneId], references: [id])
+  submissions           ExerciseSubmission[]
 }
 
 model ExerciseSubmission {

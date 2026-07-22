@@ -27,6 +27,7 @@ import { UsersModule } from './users/users.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { ResourcesModule } from './resources/resources.module';
 import { ProgressModule } from './progress/progress.module';
+import { ExercisesModule } from './exercises/exercises.module';
 
 import { InternalController } from './internal/internal.controller';
 
@@ -88,6 +89,7 @@ import { InternalController } from './internal/internal.controller';
     NotificationsModule,
     ResourcesModule,
     ProgressModule,
+    ExercisesModule,
   ],
   controllers: [AppController, InternalController],
   providers: [

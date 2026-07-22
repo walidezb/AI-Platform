@@ -26,6 +26,9 @@ export const ICON_MAP = {
   map: Map,
   bookOpen: BookOpen,
   award: Award,
+  LayoutDashboard: LayoutDashboard,
+  Map: Map,
+  Settings: Settings,
 };
 
 export interface NavItem {
