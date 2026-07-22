@@ -38,6 +38,9 @@ RESOURCE QUALITY CRITERIA:
            The Primeagen, Fireship, Traversy Media, Net Ninja
 - Avoid: Unknown blogs, SEO spam, outdated content (check for dates)
 
+SEARCH KEYWORDS INSTRUCTIONS:
+searchKeywords: 2-4 specific, targeted search queries that would find the best learning resources for this module. Be specific — include the topic + 'tutorial', 'guide', '2024', or 'deep dive' as appropriate for the module type.
+
 OUTPUT FORMAT:
 Return ONLY valid JSON matching the schema below.
 No markdown, no code blocks, no explanation text.
@@ -63,6 +66,11 @@ JSON SCHEMA:
           "description": "string",
           "moduleType": "READING|VIDEO|EXERCISE|QUIZ",
           "estimatedMinutes": number,
+          "searchKeywords": [
+            "react hooks complete tutorial 2024",
+            "react useState useEffect guide",
+            "react hooks practical examples"
+          ],
           "resources": [
             {
               "title": "string — exact article/video title",
@@ -179,6 +187,10 @@ Generate the complete learning path JSON now:"""
                         description="Theoretical foundation and overview.",
                         moduleType=ModuleType.READING,
                         estimatedMinutes=45,
+                        searchKeywords=[
+                            f"{weak_areas[0] if len(weak_areas) > 0 else 'concepts'} complete guide 2024",
+                            f"{weak_areas[0] if len(weak_areas) > 0 else 'concepts'} tutorial"
+                        ],
                         resources=[
                             GeneratedResource(
                                 title="Official Documentation",
@@ -198,6 +210,10 @@ Generate the complete learning path JSON now:"""
                         description="Hands-on tasks and scenarios.",
                         moduleType=ModuleType.EXERCISE,
                         estimatedMinutes=60,
+                        searchKeywords=[
+                            f"{weak_areas[0] if len(weak_areas) > 0 else 'concepts'} practical examples",
+                            f"{weak_areas[0] if len(weak_areas) > 0 else 'concepts'} hands on guide"
+                        ],
                         resources=[
                             GeneratedResource(
                                 title="Hands-on Tutorial",

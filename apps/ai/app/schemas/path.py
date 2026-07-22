@@ -35,6 +35,15 @@ class GeneratedModule(BaseModel):
     description: str
     moduleType: ModuleType
     estimatedMinutes: int = Field(ge=15, le=240)
+    searchKeywords: list[str] = Field(
+        default=[],
+        description=(
+            "2-4 specific search queries to find the best "
+            "resources for this module. "
+            "Example: ['react hooks tutorial 2024', "
+            "'useEffect deep dive', 'react hooks best practices']"
+        )
+    )
     resources: List[GeneratedResource]
 
 class RubricCriteria(BaseModel):

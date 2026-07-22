@@ -25,6 +25,8 @@ import { PathsModule } from './paths/paths.module';
 import { UsageModule } from './usage/usage.module';
 import { UsersModule } from './users/users.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { ResourcesModule } from './resources/resources.module';
+import { ProgressModule } from './progress/progress.module';
 
 import { InternalController } from './internal/internal.controller';
 
@@ -84,6 +86,8 @@ import { InternalController } from './internal/internal.controller';
     UsageModule,
     UsersModule,
     NotificationsModule,
+    ResourcesModule,
+    ProgressModule,
   ],
   controllers: [AppController, InternalController],
   providers: [

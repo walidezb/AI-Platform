@@ -286,6 +286,7 @@ model Module {
   moduleType       ModuleType
   estimatedMinutes Int        @default(30)
   isLocked         Boolean    @default(true)
+  searchKeywords   String[]   @default([])
   completedAt      DateTime?
   createdAt        DateTime   @default(now())
 
@@ -324,14 +325,16 @@ model ResourceCompletion {
   userId           String
   resourceId       String
   moduleId         String
-  completedAt      DateTime @default(now())
   timeSpentSeconds Int      @default(0)
+  completedAt      DateTime @default(now())
 
   user     User     @relation(fields: [userId], references: [id])
   resource Resource @relation(fields: [resourceId], references: [id])
   module   Module   @relation(fields: [moduleId], references: [id])
 
   @@unique([userId, resourceId])
+  @@index([userId, moduleId])
+  @@index([resourceId])
 }
 
 model Exercise {

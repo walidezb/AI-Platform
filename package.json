@@ -10,5 +10,10 @@
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
+  },
+  "pnpm": {
+    "overrides": {
+      "node-emoji": "1.11.0"
+    }
   }
 }

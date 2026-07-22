@@ -3,6 +3,7 @@ import logging
 from app.schemas.path import GeneratedResource
 from app.services.url_validator import url_validator
 from app.services.google_search_service import google_search
+from app.services.api_client import save_module_resources
 from app.config import settings
 
 logger = logging.getLogger(__name__)
@@ -30,6 +31,7 @@ class ResourceCuratorAgent:
     domain: str,
     experience_level: str,
     language: str = "EN",
+    module_id: str = None,
   ) -> list[GeneratedResource]:
     """
     Curate resources for a single module.
@@ -125,6 +127,14 @@ class ResourceCuratorAgent:
       f"Module '{module_title[:40]}': "
       f"{len(resources)} raw → {len(final)} curated resources"
     )
+
+    # Push to NestJS
+    if module_id:
+      await save_module_resources(
+        module_id=module_id,
+        resources=[r.model_dump() for r in final],
+      )
+
     return final
 
   def _score_resources(

@@ -5,51 +5,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-
-export interface GeneratedPathDto {
-  title: string;
-  description: string;
-  domain: string;
-  estimatedHours: number;
-  milestones: Array<{
-    sequenceOrder: number;
-    title: string;
-    description: string;
-    learningObjectives: string[];
-    estimatedHours: number;
-    modules: Array<{
-      sequenceOrder: number;
-      title: string;
-      description: string;
-      moduleType: any;
-      estimatedMinutes: number;
-      resources: Array<{
-        title: string;
-        url: string;
-        sourcePlatform: string;
-        description: string;
-        resourceType: any;
-        durationMinutes?: number | null;
-        qualityScore: number;
-        language?: string;
-      }>;
-    }>;
-    exercises: Array<{
-      title: string;
-      instructions: string;
-      exerciseType: any;
-      scenarioContext?: string | null;
-      rubric: Array<{
-        criterion: string;
-        weight: number;
-        description: string;
-        excellent: string;
-        acceptable: string;
-      }>;
-      passingScore: number;
-    }>;
-  }>;
-}
+import { GeneratedPathDto } from './dto/generated-path.dto';
 
 @Injectable()
 export class PathsService {
@@ -107,11 +63,12 @@ export class PathsService {
               moduleType: module.moduleType,
               estimatedMinutes: module.estimatedMinutes,
               isLocked: mIdx > 0 || modIdx > 0, // first module of first milestone unlocked
+              searchKeywords: module.searchKeywords ?? [],
             },
           });
 
           // Create resources for this module
-          for (const [rIdx, resource] of module.resources.entries()) {
+          for (const [rIdx, resource] of (module.resources || []).entries()) {
             await tx.resource.create({
               data: {
                 moduleId: createdModule.id,
@@ -130,7 +87,7 @@ export class PathsService {
         }
 
         // Create exercises for this milestone
-        for (const exercise of milestone.exercises) {
+        for (const exercise of milestone.exercises || []) {
           await tx.exercise.create({
             data: {
               milestoneId: createdMilestone.id,
