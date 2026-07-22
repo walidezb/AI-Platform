@@ -411,4 +411,32 @@ export class PathsController {
       message: `Regenerated ${exercises.length} exercises`,
     };
   }
+
+  @Get('milestones/:milestoneId/top-resources')
+  @Roles(UserRole.LEARNER, UserRole.MANAGER, UserRole.ORG_ADMIN)
+  async getMilestoneTopResources(
+    @Param('milestoneId') milestoneId: string,
+  ) {
+    // Return top 3 highest-quality resources across all modules
+    const resources = await this.prisma.resource.findMany({
+      where: {
+        module: { milestoneId },
+      },
+      orderBy: { qualityScore: 'desc' },
+      take: 3,
+      select: {
+        id: true,
+        title: true,
+        url: true,
+        resourceType: true,
+        sourcePlatform: true,
+        qualityScore: true,
+      },
+    });
+
+    return {
+      success: true,
+      data: resources,
+    };
+  }
 }

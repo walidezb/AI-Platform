@@ -79,6 +79,8 @@ export function useLearningPath(pathId: string) {
       return res;
     },
     staleTime: 30_000,
+    refetchInterval: 10_000, // poll every 10s
+    refetchOnWindowFocus: true,
     enabled: !!pathId,
     select: (res) => res.data,
   });

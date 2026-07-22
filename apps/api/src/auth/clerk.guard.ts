@@ -128,7 +128,7 @@ export class ClerkGuard implements CanActivate {
 
     const [type, token] = authHeader.split(' ');
 
-    if (type !== 'Bearer' || !token) {
+    if (!type || type.toLowerCase() !== 'bearer' || !token) {
       if (isPublic) {
         return true;
       }

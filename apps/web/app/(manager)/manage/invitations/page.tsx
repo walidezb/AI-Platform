@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import Papa from 'papaparse';
 import { toast } from 'sonner';
 import { ShareLinkDialog } from '@/components/invitations/ShareLinkDialog';
+import { BulkImportDialog } from '@/components/invitations/BulkImportDialog';
 import { AnimatedNumber } from '@/components/ui/AnimatedNumber';
 
 import { 
@@ -79,6 +80,7 @@ export default function InvitationsPage() {
   const { 
     invitations, 
     isLoading: isInvitationsLoading, 
+    refetch,
     invite, 
     isInviting, 
     bulkInvite, 
@@ -318,12 +320,28 @@ export default function InvitationsPage() {
       toast.error(errorMsg);
     }
   };
+  const [bulkOpen, setBulkOpen] = useState(false);
 
   return (
     <div className="space-y-8 pb-12">
-      <PageHeader
-        title="Invitations"
-        subtitle="Manage pending employee invites and track onboarding diagnostics"
+      <div className="flex items-center justify-between">
+        <PageHeader
+          title="Invitations"
+          subtitle="Manage pending employee invites and track onboarding diagnostics"
+        />
+        <Button variant="outline" onClick={() => setBulkOpen(true)}>
+          <Upload className="h-4 w-4 mr-2" />
+          Bulk Import CSV
+        </Button>
+      </div>
+
+      <BulkImportDialog
+        open={bulkOpen}
+        onOpenChange={setBulkOpen}
+        onSuccess={(count) => {
+          toast.success(`✅ ${count} invitation${count !== 1 ? 's' : ''} sent!`);
+          refetch();
+        }}
       />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">

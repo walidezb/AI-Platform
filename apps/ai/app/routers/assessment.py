@@ -10,6 +10,7 @@ from app.schemas.assessment import (
 from app.agents.assessment_agent import AssessmentAgent
 from app.services.redis_service import redis_service
 from app.services.usage_logger import log_usage_to_api
+from app.services.budget_checker import check_budget, invalidate_budget_cache
 from app.config import settings
 
 router = APIRouter(prefix="/assessment", tags=["Assessment"])
@@ -20,6 +21,9 @@ logger = logging.getLogger(__name__)
 @router.post("/start")
 async def start_assessment(request: StartAssessmentRequest):
     """Initialize an assessment session and return the AI's opening message."""
+
+    # Check budget before initiating AI session
+    await check_budget(request.organizationId)
 
     # Check if session already exists (resuming)
     existing = await redis_service.get_session(request.assessmentId)
@@ -93,6 +97,9 @@ async def send_message(
     if session.status == "completed":
         raise HTTPException(400, "Assessment already completed")
 
+    # Check budget before LLM call
+    await check_budget(session.organizationId)
+
     # Add user message to history
     session.conversationHistory.append({
         "role": "user",
@@ -129,6 +136,7 @@ async def send_message(
             output_tokens=agent.last_usage["output_tokens"],
             cost_usd=agent.last_usage["cost_usd"],
         )
+        background_tasks.add_task(invalidate_budget_cache, session.organizationId)
 
     # Check if assessment is complete
     is_complete = agent.is_complete(ai_response)
@@ -202,6 +210,9 @@ async def send_message_stream(
     if session.status == "completed":
         raise HTTPException(400, "Assessment already completed")
 
+    # Check budget before streaming LLM response
+    await check_budget(session.organizationId)
+
     # Add user message to history
     session.conversationHistory.append({
         "role": "user",
@@ -249,6 +260,7 @@ async def send_message_stream(
                     output_tokens=agent.last_usage["output_tokens"],
                     cost_usd=agent.last_usage["cost_usd"],
                 )
+                background_tasks.add_task(invalidate_budget_cache, session.organizationId)
             is_complete = agent.is_complete(full_response)
             skill_profile = None
             display_message = full_response

@@ -7,6 +7,7 @@ import {
   Query,
   Headers,
   UnauthorizedException,
+  ForbiddenException,
   Logger,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -26,7 +27,25 @@ export class UsageController {
     private readonly config: ConfigService,
   ) {}
 
-  // Called by AI service
+  // Internal endpoint for FastAPI budget checks
+  @Get('internal/budget/:orgId')
+  @Public()
+  @SkipThrottle()
+  async getBudget(
+    @Param('orgId') orgId: string,
+    @Headers('x-internal-secret') secret: string,
+  ) {
+    const expectedSecret =
+      this.config.get('INTERNAL_SERVICE_SECRET') ||
+      this.config.get('AI_SERVICE_SECRET');
+    if (secret !== expectedSecret) {
+      throw new UnauthorizedException('Invalid internal secret');
+    }
+    const result = await this.service.checkBudget(orgId);
+    return { success: true, data: result };
+  }
+
+  // Internal endpoint called by AI service to log usage
   @Post('internal/usage/log')
   @Public()
   @SkipThrottle()
@@ -34,14 +53,44 @@ export class UsageController {
     @Body() body: any,
     @Headers('x-internal-secret') secret: string,
   ) {
-    if (secret !== this.config.get('AI_SERVICE_SECRET')) {
-      throw new UnauthorizedException();
+    const expectedSecret =
+      this.config.get('AI_SERVICE_SECRET') ||
+      this.config.get('INTERNAL_SERVICE_SECRET');
+    if (secret !== expectedSecret) {
+      throw new UnauthorizedException('Invalid internal secret');
     }
     await this.service.logUsage(body);
     return { success: true };
   }
 
-  // Manager/admin can view org usage
+  // Feature & employee spend breakdown for Phase 5 manager dashboard
+  @Get('usage/org/:orgId/detail')
+  @Roles(UserRole.ORG_ADMIN, UserRole.MANAGER, UserRole.PLATFORM_ADMIN)
+  async getOrgUsageDetail(
+    @Param('orgId') orgId: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+    @CurrentUser() user?: any,
+  ) {
+    // Org scope check
+    if (
+      user?.organizationId !== orgId &&
+      user?.role !== UserRole.PLATFORM_ADMIN
+    ) {
+      throw new ForbiddenException(
+        'You do not have access to this organization usage data',
+      );
+    }
+
+    const result = await this.service.getOrgUsageDetail(
+      orgId,
+      startDate ? new Date(startDate) : undefined,
+      endDate ? new Date(endDate) : undefined,
+    );
+    return { success: true, data: result };
+  }
+
+  // Manager/admin can view org usage summary
   @Get('usage/org')
   @Roles(UserRole.ORG_ADMIN, UserRole.MANAGER, UserRole.PLATFORM_ADMIN)
   async getOrgUsage(@CurrentUser() user: any, @Query('days') days?: string) {
@@ -57,13 +106,14 @@ export class UsageController {
   // Budget widget for settings page
   @Get('usage/budget')
   @Roles(UserRole.ORG_ADMIN, UserRole.MANAGER)
-  async getBudget(@CurrentUser() user: any) {
+  async getBudgetWidget(@CurrentUser() user: any) {
     const usage = await this.service.getOrgUsage(user.organizationId, 30);
     return {
       success: true,
       data: {
         tokensUsed: usage.tokensUsed,
         tokensBudget: usage.tokensBudget,
+        monthlyTokenBudgetUsd: usage.monthlyTokenBudgetUsd,
         budgetUsedPct: usage.budgetUsedPct,
         totalCostUsd: usage.totalCostUsd,
         byFeature: usage.byFeature,

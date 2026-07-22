@@ -106,6 +106,8 @@ enum NotificationType {
   EXERCISE_GRADED
   ASSESSMENT_COMPLETED
   TEAM_PROGRESS
+  BUDGET_WARNING
+  BUDGET_EXCEEDED
   SYSTEM
 }
 
@@ -124,6 +126,7 @@ model Organization {
   maxEmployees         Int              @default(50)
   aiTokensUsed         BigInt           @default(0)
   aiTokensBudget       BigInt           @default(10000000)
+  monthlyTokenBudgetUsd Float?          @default(50.0)
   stripeCustomerId     String?          @unique
   stripeSubscriptionId String?          @unique
   isSuspended          Boolean          @default(false)

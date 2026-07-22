@@ -705,4 +705,96 @@ export class ProgressService {
       isPathComplete: !nextMilestone,
     };
   }
+
+  // ── PROGRESS RECONCILIATION SERVICE ──────────────────
+
+  /**
+   * Reconcile UserProgress to ensure currentMilestone +
+   * currentModule always point to the actual next thing
+   * the learner should do. Call this on login + on path load.
+   */
+  async reconcileProgress(userId: string): Promise<void> {
+    const progress = await this.prisma.userProgress.findUnique({
+      where: { userId },
+      include: {
+        learningPath: {
+          include: {
+            milestones: {
+              orderBy: { sequenceOrder: 'asc' },
+              where: { isLocked: false },
+              include: {
+                modules: {
+                  orderBy: { sequenceOrder: 'asc' },
+                  where: { isLocked: false },
+                  include: {
+                    resources: { select: { id: true } },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!progress?.learningPath) return;
+
+    // Find first incomplete module across all unlocked milestones
+    let targetMilestoneId: string | null = null;
+    let targetModuleId: string | null = null;
+
+    for (const milestone of progress.learningPath.milestones) {
+      for (const module of milestone.modules) {
+        if (module.resources.length === 0) continue;
+
+        const completed = await this.prisma.resourceCompletion.count({
+          where: { userId, moduleId: module.id },
+        });
+
+        if (completed < module.resources.length) {
+          // This module is not yet done — this is where they should be
+          targetMilestoneId = milestone.id;
+          targetModuleId = module.id;
+          break;
+        }
+      }
+      if (targetModuleId) break;
+    }
+
+    // If all modules complete → path might be done
+    if (!targetModuleId) {
+      const allMilestonesDone = progress.learningPath.milestones.every(
+        (m) => m.completedAt !== null,
+      );
+      if (allMilestonesDone && progress.status !== 'COMPLETED') {
+        await this.prisma.userProgress.update({
+          where: { userId },
+          data: {
+            status: 'COMPLETED',
+            overallCompletionPct: 100,
+          },
+        });
+      }
+      return;
+    }
+
+    // Update if stale
+    const needsUpdate =
+      progress.currentMilestoneId !== targetMilestoneId ||
+      progress.currentModuleId !== targetModuleId;
+
+    if (needsUpdate) {
+      await this.prisma.userProgress.update({
+        where: { userId },
+        data: {
+          currentMilestoneId: targetMilestoneId,
+          currentModuleId: targetModuleId,
+          status: 'IN_PROGRESS',
+        },
+      });
+      this.logger.log(
+        `Reconciled progress for ${userId}: module → ${targetModuleId}`,
+      );
+    }
+  }
 }

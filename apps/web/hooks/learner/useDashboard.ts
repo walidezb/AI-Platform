@@ -11,6 +11,8 @@ export interface DashboardData {
     streakDays: number;
     status: string;
     lastActivityAt?: string | null;
+    currentMilestoneId?: string | null;
+    currentModuleId?: string | null;
   };
   path: {
     id: string;
@@ -39,7 +41,7 @@ export interface DashboardData {
       };
     }>;
   } | null;
-  currentMilestone: {
+  currentMilestone?: {
     id: string;
     sequenceOrder: number;
     title: string;
@@ -54,7 +56,18 @@ export interface DashboardData {
       sequenceOrder: number;
     }>;
   } | null;
-  nextModule: {
+  currentModule?: {
+    id: string;
+    title: string;
+    moduleType: string;
+    estimatedMinutes: number;
+    milestone?: {
+      id: string;
+      title: string;
+      sequenceOrder: number;
+    };
+  } | null;
+  nextModule?: {
     id: string;
     title: string;
     moduleType: string;
@@ -68,9 +81,10 @@ export interface DashboardData {
     resource: {
       title: string;
       resourceType: string;
-      moduleId: string;
+      moduleId?: string;
     };
   }>;
+  activityByDate?: Record<string, number>;
 }
 
 export function useDashboard() {
@@ -80,11 +94,57 @@ export function useDashboard() {
     queryKey: ['learner-dashboard'],
     queryFn: async () => {
       const client = createApiClient(getToken);
-      const res = await client.get<{ success: boolean; data: DashboardData }>('/progress/summary');
+      const res = await client.get<{ success: boolean; data: DashboardData }>(
+        '/progress/snapshot',
+      );
       return res;
     },
     staleTime: 30_000, // 30s cache
     refetchInterval: 60_000, // refresh every 60s
+    refetchOnWindowFocus: true, // re-fetch when tab is refocused
+    select: (res) => res.data,
+  });
+}
+
+export interface ResumeData {
+  currentPage: string;
+  redirectUrl: string | null;
+  pathId?: string;
+  pathTitle?: string;
+  milestoneId?: string;
+  moduleId?: string;
+  currentModule?: {
+    title: string;
+    moduleType: string;
+    estimatedMinutes: number;
+    milestone?: {
+      title: string;
+    };
+  } | null;
+  progressSummary?: {
+    completionPct: number;
+    streakDays: number;
+    timeSpentMinutes: number;
+    lastActivityAt?: string | null;
+    status?: string;
+  } | null;
+  message?: string;
+}
+
+export function useResume() {
+  const { getToken } = useAuth();
+
+  return useQuery({
+    queryKey: ['resume'],
+    queryFn: async () => {
+      const client = createApiClient(getToken);
+      const res = await client.get<{ success: boolean; data: ResumeData }>(
+        '/progress/resume',
+      );
+      return res;
+    },
+    staleTime: 30_000,
+    refetchOnWindowFocus: true,
     select: (res) => res.data,
   });
 }

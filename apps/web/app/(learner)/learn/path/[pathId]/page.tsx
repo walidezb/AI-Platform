@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
 import { Map } from 'lucide-react';
 import { useLearningPath } from '@/hooks/learner/useLearningPath';
 import { PathHeader } from '@/components/learn/PathHeader';
@@ -43,21 +44,28 @@ export default function PathOverviewPage({
         {/* Vertical connecting line */}
         <div className="absolute left-6 top-8 bottom-8 w-px bg-gradient-to-b from-primary/30 via-border to-transparent" />
 
-        <div className="space-y-4">
+        <motion.div layout className="space-y-4">
           {path.milestones.map((milestone, i) => (
-            <MilestoneCard
+            <motion.div
               key={milestone.id}
-              milestone={milestone}
-              index={i}
-              onContinue={(moduleId) =>
-                router.push(`/learn/module/${moduleId}`)
-              }
-              onReview={(moduleId) =>
-                router.push(`/learn/module/${moduleId}`)
-              }
-            />
+              layout // smooth reorder / state animation
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.08 }}
+            >
+              <MilestoneCard
+                milestone={milestone}
+                index={i}
+                onContinue={(moduleId) =>
+                  router.push(`/learn/module/${moduleId}`)
+                }
+                onReview={(moduleId) =>
+                  router.push(`/learn/module/${moduleId}`)
+                }
+              />
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </div>
     </div>
   );

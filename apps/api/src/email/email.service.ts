@@ -172,4 +172,111 @@ export class EmailService {
     // Placeholder — full implementation in Phase 3 Step 3.6
     this.logger.log(`Path ready email queued for ${params.to}`);
   }
+
+  async sendBudgetWarningEmail(params: {
+    to: string;
+    name: string;
+    percentUsed: number;
+    usedUsd: number;
+    budgetUsd: number;
+    remainingUsd: number;
+  }) {
+    const { to, name, percentUsed, usedUsd, budgetUsd, remainingUsd } = params;
+    const appUrl = this.config.get<string>('APP_URL') || 'http://localhost:3000';
+    const fromEmail =
+      this.config.get<string>('SENDGRID_FROM_EMAIL') || 'no-reply@ezlearn.ai';
+
+    const html = `
+      <div style="font-family:sans-serif;max-width:520px;margin:0 auto">
+        <h2 style="color:#f59e0b">⚠️ AI Budget Warning</h2>
+        <p>Hi ${name},</p>
+        <p>Your organization has used
+          <strong>${percentUsed.toFixed(0)}%</strong>
+          of its monthly AI token budget.</p>
+        <table style="width:100%;border-collapse:collapse;margin:16px 0">
+          <tr>
+            <td style="padding:8px;color:#6b7280">Used</td>
+            <td style="padding:8px;font-weight:bold">
+              $${usedUsd.toFixed(2)}
+            </td>
+          </tr>
+          <tr style="background:#f9fafb">
+            <td style="padding:8px;color:#6b7280">Budget</td>
+            <td style="padding:8px;font-weight:bold">
+              $${budgetUsd.toFixed(2)}
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:8px;color:#6b7280">Remaining</td>
+            <td style="padding:8px;font-weight:bold;color:#10b981">
+              $${remainingUsd.toFixed(2)}
+            </td>
+          </tr>
+        </table>
+        <p>To avoid service interruption, please
+          <a href="${appUrl}/manage/settings"
+             style="color:#6366f1">
+            increase your budget
+          </a>
+          before reaching 100%.
+        </p>
+        <p style="color:#6b7280;font-size:12px">
+          AI features will be paused when the budget is fully consumed.
+        </p>
+      </div>
+    `;
+
+    try {
+      await sgMail.send({
+        to,
+        from: { email: fromEmail, name: 'EZ LEARN' },
+        subject: `⚠️ AI Usage Alert: ${percentUsed.toFixed(0)}% of budget used`,
+        html,
+      });
+      this.logger.log(`Budget warning email sent to ${to}`);
+    } catch (err) {
+      this.logger.error(`Failed to send budget warning email to ${to}`, err);
+    }
+  }
+
+  async sendBudgetExceededEmail(params: {
+    to: string;
+    name: string;
+    usedUsd: number;
+    budgetUsd: number;
+  }) {
+    const appUrl = this.config.get<string>('APP_URL') || 'http://localhost:3000';
+    const fromEmail =
+      this.config.get<string>('SENDGRID_FROM_EMAIL') || 'no-reply@ezlearn.ai';
+
+    const html = `
+      <div style="font-family:sans-serif;max-width:520px;margin:0 auto">
+        <h2 style="color:#ef4444">🚫 AI Budget Exceeded</h2>
+        <p>Hi ${params.name},</p>
+        <p>Your organization's monthly AI budget of
+          <strong>$${params.budgetUsd.toFixed(2)}</strong>
+          has been exceeded ($${params.usedUsd.toFixed(2)} used).</p>
+        <p><strong>AI features are now paused</strong> until you
+          increase your budget or the billing cycle resets.</p>
+        <a href="${appUrl}/manage/settings"
+           style="display:inline-block;padding:12px 24px;
+                  background:#6366f1;color:white;border-radius:8px;
+                  text-decoration:none;font-weight:bold;margin:16px 0">
+          Increase Budget →
+        </a>
+      </div>
+    `;
+
+    try {
+      await sgMail.send({
+        to: params.to,
+        from: { email: fromEmail, name: 'EZ LEARN' },
+        subject: '🚫 AI features paused — budget exceeded',
+        html,
+      });
+      this.logger.log(`Budget exceeded email sent to ${params.to}`);
+    } catch (err) {
+      this.logger.error(`Failed to send budget exceeded email to ${params.to}`, err);
+    }
+  }
 }

@@ -9,6 +9,7 @@ from app.agents.exercise_generator import ExerciseGeneratorAgent
 from app.schemas.path import PathGenerationRequest, GeneratedPath
 from app.services.usage_logger import log_usage_to_api
 from app.services.pinecone_service import pinecone_service
+from app.services.budget_checker import check_budget, invalidate_budget_cache
 from app.config import settings
 
 router = APIRouter(prefix="/path", tags=["Path Generation"])
@@ -23,6 +24,8 @@ async def generate_path(
     Generate a complete learning path from a skill profile.
     Called by NestJS BullMQ processor (authenticated via internal secret).
     """
+    # Check budget before LLM path generation
+    await check_budget(request.organizationId)
     logger.info(
         f"Generating path for user {request.userId}, "
         f"role: {request.skillProfile.get('identified_role')}"
@@ -134,6 +137,7 @@ async def generate_path(
             output_tokens=agent._last_usage["output_tokens"],
             cost_usd=agent._last_usage["cost_usd"],
         )
+        background_tasks.add_task(invalidate_budget_cache, request.organizationId)
 
     total_exercises = sum(len(v) for v in exercise_map.values())
     total_resources = sum(

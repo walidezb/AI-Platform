@@ -5,8 +5,10 @@ import {
   Body,
   UnauthorizedException,
   NotFoundException,
+  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { ProgressService } from '../progress/progress.service';
 import { Public } from './decorators/public.decorator';
 import { CurrentUser } from './decorators/current-user.decorator';
 
@@ -26,7 +28,12 @@ interface SyncUserDto {
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly prisma: PrismaService) {}
+  private readonly logger = new Logger(AuthController.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly progressService: ProgressService,
+  ) {}
 
   @Public()
   @AuthThrottle()
@@ -120,6 +127,17 @@ export class AuthController {
 
   @Get('me')
   getMe(@CurrentUser() user: any) {
+    if (user && user.role === 'LEARNER') {
+      // Fire-and-forget — don't block the auth response
+      this.progressService
+        .reconcileProgress(user.id)
+        .catch((err) =>
+          this.logger.warn(
+            `Progress reconcile failed for ${user.id}: ${err}`,
+          ),
+        );
+    }
+
     return {
       success: true,
       data: {

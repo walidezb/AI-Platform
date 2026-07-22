@@ -18,8 +18,9 @@ import {
   Zap,
 } from 'lucide-react';
 
-import { useDashboard } from '@/hooks/learner/useDashboard';
+import { useDashboard, useResume } from '@/hooks/learner/useDashboard';
 import { DashboardSkeleton } from '@/components/learn/DashboardSkeleton';
+import { ActivityHeatmap } from '@/components/learn/ActivityHeatmap';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { StatsCard } from '@/components/ui/StatsCard';
 import { ProgressBar } from '@/components/ui/ProgressBar';
@@ -35,6 +36,7 @@ import { QUOTES } from '@/lib/constants/quotes';
 
 export default function LearnerDashboardPage() {
   const { data, isLoading } = useDashboard();
+  const { data: resume } = useResume();
   const router = useRouter();
   const { user } = useUser();
 
@@ -216,11 +218,25 @@ export default function LearnerDashboardPage() {
             <Button
               size="lg"
               className="w-full bg-gradient-primary shadow-glow-sm"
-              onClick={() => router.push(`/learn/module/${nextModule.id}`)}
+              onClick={() => {
+                if (resume?.redirectUrl) {
+                  router.push(resume.redirectUrl);
+                } else if (nextModule) {
+                  router.push(`/learn/module/${nextModule.id}`);
+                }
+              }}
             >
               <Play className="h-4 w-4 mr-2" />
-              Continue Learning →
+              {resume?.currentModule?.title
+                ? `Continue: ${resume.currentModule.title}`
+                : 'Continue Learning →'}
             </Button>
+            {resume?.currentModule && (
+              <p className="text-xs text-center text-muted-foreground mt-2">
+                {resume.currentModule.milestone?.title}
+                {' · '}~{resume.currentModule.estimatedMinutes}min
+              </p>
+            )}
           </Card>
         </motion.div>
       )}
@@ -321,6 +337,13 @@ export default function LearnerDashboardPage() {
           })}
         </div>
       </div>
+
+      {/* ── SECTION D.5: ACTIVITY HEATMAP ── */}
+      {data?.activityByDate && Object.keys(data.activityByDate).length > 0 && (
+        <Card className="p-5">
+          <ActivityHeatmap activityByDate={data.activityByDate} />
+        </Card>
+      )}
 
       {/* ── SECTION E: RECENT ACTIVITY ── */}
       {recentActivity && recentActivity.length > 0 && (

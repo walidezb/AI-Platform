@@ -3,6 +3,7 @@ import { auth } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
 import { serverFetch } from '@/lib/api-server';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
+import { LearnerProgressSyncWrapper } from '@/components/learner/LearnerProgressSyncWrapper';
 
 interface User {
   id: string;
@@ -64,14 +65,22 @@ export default async function LearnerLayout({
   ];
 
   return (
-    <DashboardLayout
-      navItems={navItems}
-      pageTitle="Learner Portal"
-      breadcrumb={['Learner', 'Dashboard']}
-      org={user?.organization || { name: 'Your Learning Workspace', logoUrl: null, planTier: 'STARTER' }}
-      user={user || { fullName: 'Learner', role: 'LEARNER' }}
-    >
-      {children}
-    </DashboardLayout>
+    <LearnerProgressSyncWrapper>
+      <DashboardLayout
+        navItems={navItems}
+        pageTitle="Learner Portal"
+        breadcrumb={['Learner', 'Dashboard']}
+        org={
+          user?.organization || {
+            name: 'Your Learning Workspace',
+            logoUrl: null,
+            planTier: 'STARTER',
+          }
+        }
+        user={user || { fullName: 'Learner', role: 'LEARNER' }}
+      >
+        {children}
+      </DashboardLayout>
+    </LearnerProgressSyncWrapper>
   );
 }

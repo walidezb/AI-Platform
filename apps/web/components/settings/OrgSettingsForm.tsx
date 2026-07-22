@@ -4,11 +4,12 @@ import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Loader2, ChevronRight, AlertTriangle, Building } from 'lucide-react';
+import { Loader2, ChevronRight, AlertTriangle } from 'lucide-react';
 import { notify } from '@/lib/toast';
 import { formatDate } from '@/lib/utils/date';
 
 import { useOrgProfile, useUpdateOrg } from '@/hooks/manager/useOrgProfile';
+import { LogoUpload } from './LogoUpload';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -88,12 +89,9 @@ export function OrgSettingsForm({ orgId }: OrgSettingsFormProps) {
     },
   });
 
-  const logoUrlWatch = watch('logoUrl');
   const langWatch = watch('defaultLanguage');
   const timezoneWatch = watch('timezone');
   const industryWatch = watch('industry');
-  
-  const [debouncedLogoUrl, setDebouncedLogoUrl] = useState('');
 
   // Reset form when organization details fetch completes
   useEffect(() => {
@@ -105,17 +103,8 @@ export function OrgSettingsForm({ orgId }: OrgSettingsFormProps) {
         timezone: org.timezone || 'Asia/Dubai',
         defaultLanguage: org.defaultLanguage || 'EN',
       });
-      setDebouncedLogoUrl(org.logoUrl || '');
     }
   }, [org, reset]);
-
-  // Debounce logo preview Url by 500ms
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedLogoUrl(logoUrlWatch || '');
-    }, 500);
-    return () => clearTimeout(timer);
-  }, [logoUrlWatch]);
 
   if (isLoading) {
     return (
@@ -167,38 +156,14 @@ export function OrgSettingsForm({ orgId }: OrgSettingsFormProps) {
                 <p className="text-xs text-muted-foreground mt-1">Configure company identifiers, logos, and market sectors.</p>
               </div>
 
-              {/* LOGO AREA */}
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 p-4 rounded-xl border border-slate-900 bg-slate-950/40">
-                {debouncedLogoUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={debouncedLogoUrl}
-                    alt="Company Logo Preview"
-                    className="h-16 w-16 rounded-xl object-cover border border-slate-800"
-                    onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).src = '';
-                      setDebouncedLogoUrl('');
-                    }}
-                  />
-                ) : (
-                  <div className="h-16 w-16 rounded-xl bg-gradient-primary flex items-center justify-center text-white text-2xl font-black shrink-0">
-                    {watch('name') ? watch('name')[0].toUpperCase() : <Building className="h-6 w-6" />}
-                  </div>
-                )}
-                
-                <div className="space-y-1.5 w-full max-w-md">
-                  <Label htmlFor="logoUrl" className="text-xs text-slate-300 font-semibold">Company Logo URL</Label>
-                  <Input
-                    id="logoUrl"
-                    placeholder="https://example.com/logo.png"
-                    className="text-xs bg-slate-950 border-slate-900 text-white"
-                    {...register('logoUrl')}
-                  />
-                  <p className="text-[10px] text-muted-foreground select-none">Paste a public image URL to update the logo.</p>
-                  {errors.logoUrl && (
-                    <p className="text-[10px] text-destructive font-bold">{errors.logoUrl.message}</p>
-                  )}
-                </div>
+              {/* LOGO UPLOAD AREA */}
+              <div className="p-4 rounded-xl border border-slate-900 bg-slate-950/40">
+                <LogoUpload
+                  currentLogoUrl={watch('logoUrl') || null}
+                  onUploadComplete={(url) => {
+                    setValue('logoUrl', url, { shouldDirty: true, shouldValidate: true });
+                  }}
+                />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

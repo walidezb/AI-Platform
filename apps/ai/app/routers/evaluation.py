@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from app.agents.exercise_evaluator import ExerciseEvaluatorAgent
 from app.services.api_client import update_submission
 from app.services.ai_usage_logger import log_usage
+from app.services.budget_checker import check_budget, invalidate_budget_cache
 from app.config import settings
 import logging
 
@@ -35,6 +36,9 @@ async def evaluate_exercise(
   if x_internal_secret != settings.INTERNAL_SERVICE_SECRET:
     raise HTTPException(status_code=401, detail="Unauthorized")
 
+  # Check budget before evaluation LLM call
+  await check_budget(request.organizationId)
+
   logger.info(
     f"Evaluating submission {request.submissionId} "
     f"for exercise '{request.exerciseTitle}'"
@@ -63,6 +67,7 @@ async def evaluate_exercise(
       tokens_input    = result['tokensUsed'] // 2,   # approx
       tokens_output   = result['tokensUsed'] // 2,
     )
+    invalidate_budget_cache(request.organizationId)
 
   # Push result back to NestJS
   success = await update_submission(

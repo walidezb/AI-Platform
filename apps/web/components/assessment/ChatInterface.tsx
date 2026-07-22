@@ -8,7 +8,10 @@ import ReactMarkdown from 'react-markdown';
 import { Logo } from '@/components/ui/Logo';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Card } from '@/components/ui/card';
 import { toast } from 'sonner';
+import { useAssessmentDraft, DraftMessage } from '@/hooks/onboarding/useAssessmentDraft';
+import { formatRelativeTime } from '@/lib/utils/date';
 
 interface ChatMessage {
   id: string;
@@ -29,9 +32,15 @@ export function ChatInterface({ token }: ChatInterfaceProps) {
   const [isStreaming, setIsStreaming] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
   const [assessmentId, setAssessmentId] = useState<string | null>(null);
-  const [turnCount, setTurnCount] = useState(0);
   const [isInitializing, setIsInitializing] = useState(true);
   
+  // Draft restore states
+  const [showRestorePrompt, setShowRestorePrompt] = useState(false);
+  const [restoredMessages, setRestoredMessages] = useState<DraftMessage[] | null>(null);
+  const [draftSavedAt, setDraftSavedAt] = useState<string>('');
+
+  const { saveDraft, clearDraft } = useAssessmentDraft(assessmentId);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -42,6 +51,20 @@ export function ChatInterface({ token }: ChatInterfaceProps) {
   useEffect(() => {
     scrollToBottom();
   }, [messages, isStreaming]);
+
+  // Save draft after message updates
+  useEffect(() => {
+    if (messages.length > 0 && assessmentId) {
+      saveDraft(messages, isComplete);
+    }
+  }, [messages, isComplete, assessmentId, saveDraft]);
+
+  // Clear draft when completed
+  useEffect(() => {
+    if (isComplete && assessmentId) {
+      clearDraft();
+    }
+  }, [isComplete, assessmentId, clearDraft]);
 
   // Initialize assessment session on mount
   useEffect(() => {
@@ -61,8 +84,33 @@ export function ChatInterface({ token }: ChatInterfaceProps) {
 
         const json = await res.json();
         if (json.success && json.data) {
-          setAssessmentId(json.data.assessmentId);
-          setTurnCount(json.data.turnCount);
+          const currentId = json.data.assessmentId;
+          setAssessmentId(currentId);
+
+          // Check if a saved draft exists for this assessment
+          try {
+            const rawDraft = localStorage.getItem(`assessment-draft:${currentId}`);
+            if (rawDraft) {
+              const draftObj = JSON.parse(rawDraft);
+              const hoursSince = (Date.now() - new Date(draftObj.savedAt).getTime()) / 3_600_000;
+              if (hoursSince <= 2 && draftObj.messages && draftObj.messages.length > 1) {
+                setRestoredMessages(draftObj.messages);
+                setDraftSavedAt(draftObj.savedAt);
+                setShowRestorePrompt(true);
+                setMessages([
+                  {
+                    id: 'initial',
+                    role: 'assistant',
+                    content: json.data.firstMessage,
+                  },
+                ]);
+                return;
+              }
+            }
+          } catch {
+            /* ignore parse errors */
+          }
+
           setMessages([
             {
               id: 'initial',
@@ -160,7 +208,6 @@ export function ChatInterface({ token }: ChatInterfaceProps) {
             }
 
             if (data.type === 'done') {
-              setTurnCount(data.turnCount);
               if (data.isComplete) {
                 setIsComplete(true);
               }
@@ -229,6 +276,10 @@ export function ChatInterface({ token }: ChatInterfaceProps) {
     );
   }
 
+  const userTurnCount = messages.filter((m) => m.role === 'user').length;
+  const TOTAL_TURNS = 8;
+  const progressPct = Math.min(Math.round((userTurnCount / TOTAL_TURNS) * 100), 100);
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col relative overflow-hidden">
       {/* Visual background layers */}
@@ -244,23 +295,71 @@ export function ChatInterface({ token }: ChatInterfaceProps) {
       {/* HEADER (sticky top) */}
       <div className="sticky top-0 z-20 border-b border-slate-800 bg-slate-950/80 backdrop-blur-md px-6 py-4">
         <div className="max-w-3xl mx-auto">
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center justify-between mb-2">
             <Logo size="sm" />
-            <div className="text-xs text-slate-400 flex items-center gap-2">
-              <span className="text-indigo-400 font-medium tracking-wide uppercase">AI Interview</span>
+            <div className="text-xs text-slate-400 flex items-center gap-2 font-mono">
+              <span className="text-indigo-400 font-medium uppercase tracking-wide">Question {userTurnCount + 1} of ~{TOTAL_TURNS}</span>
               <span className="text-slate-700">•</span>
-              <span>Turn {turnCount} of ~10</span>
+              <span>{progressPct}% complete</span>
             </div>
           </div>
           {/* Progress bar */}
-          <div className="h-1 bg-slate-900 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-gradient-to-r from-indigo-500 to-violet-500 rounded-full transition-all duration-700"
-              style={{ width: `${Math.min((turnCount / 10) * 100, 100)}%` }}
+          <div className="h-1.5 bg-slate-900 rounded-full overflow-hidden">
+            <motion.div
+              className="h-full bg-gradient-to-r from-indigo-500 to-violet-500 rounded-full"
+              initial={{ width: 0 }}
+              animate={{ width: `${progressPct}%` }}
+              transition={{ duration: 0.4 }}
             />
           </div>
         </div>
       </div>
+
+      {/* DRAFT RESTORE PROMPT BANNER */}
+      {showRestorePrompt && restoredMessages && (
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mx-auto max-w-3xl px-6 pt-4 relative z-30 w-full"
+        >
+          <Card className="p-4 border-amber-500/30 bg-amber-500/10 text-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold flex items-center gap-2 text-amber-300">
+                💾 Continue your previous assessment?
+              </p>
+              <p className="text-xs text-slate-400 mt-1">
+                We saved your conversation from earlier ({restoredMessages.length} messages
+                {draftSavedAt ? ` — saved ${formatRelativeTime(draftSavedAt)}` : ''}).
+              </p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <Button
+                size="sm"
+                className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold"
+                onClick={() => {
+                  setMessages(restoredMessages);
+                  setShowRestorePrompt(false);
+                  toast.success('Restored previous conversation draft');
+                }}
+              >
+                Resume
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="text-xs text-slate-400 hover:text-white"
+                onClick={() => {
+                  clearDraft();
+                  setShowRestorePrompt(false);
+                  toast.info('Started fresh assessment');
+                }}
+              >
+                Start Over
+              </Button>
+            </div>
+          </Card>
+        </motion.div>
+      )}
 
       {/* MESSAGES AREA (scrollable) */}
       <div className="flex-1 overflow-y-auto px-6 py-8 relative z-10">

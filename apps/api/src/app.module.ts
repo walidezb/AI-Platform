@@ -1,6 +1,7 @@
 import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 import { BullModule } from '@nestjs/bull';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { ThrottlerStorageRedisService } from '@nest-lab/throttler-storage-redis';
@@ -28,6 +29,7 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { ResourcesModule } from './resources/resources.module';
 import { ProgressModule } from './progress/progress.module';
 import { ExercisesModule } from './exercises/exercises.module';
+import { UploadsModule } from './uploads/uploads.module';
 
 import { InternalController } from './internal/internal.controller';
 
@@ -36,6 +38,7 @@ import { InternalController } from './internal/internal.controller';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    EventEmitterModule.forRoot(),
     PrismaModule,
     AuthModule,
     ThrottlerModule.forRootAsync({
@@ -90,6 +93,7 @@ import { InternalController } from './internal/internal.controller';
     ResourcesModule,
     ProgressModule,
     ExercisesModule,
+    UploadsModule,
   ],
   controllers: [AppController, InternalController],
   providers: [

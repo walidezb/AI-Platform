@@ -1,3 +1,5 @@
+import { toast } from 'sonner';
+
 export class ApiError extends Error {
   constructor(public status: number, message: string) {
     super(message);
@@ -27,8 +29,19 @@ export function createApiClient(getToken: () => Promise<string | null>) {
     });
 
     if (!res.ok) {
-      const error = await res.json().catch(() => ({}));
-      throw new ApiError(res.status, error.message || 'Request failed');
+      const errorData = await res.json().catch(() => ({}));
+      if (res.status === 402) {
+        const msg =
+          errorData.detail?.message ||
+          errorData.message ||
+          'Your organization has reached its AI usage limit. Contact your administrator.';
+        toast.error('💳 AI Budget Exceeded', {
+          description: msg,
+          duration: 8000,
+        });
+        throw new ApiError(402, 'BUDGET_EXCEEDED');
+      }
+      throw new ApiError(res.status, errorData.message || 'Request failed');
     }
 
     return res.json();
