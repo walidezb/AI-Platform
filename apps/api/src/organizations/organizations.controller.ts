@@ -3,8 +3,11 @@ import {
   Get,
   Post,
   Patch,
+  Delete,
   Param,
   Body,
+  HttpCode,
+  HttpStatus,
   ForbiddenException,
 } from '@nestjs/common';
 import { OrganizationsService } from './organizations.service';
@@ -93,5 +96,19 @@ export class OrganizationsController {
       success: true,
       data: await this.service.updateOrgSettings(id, dto),
     };
+  }
+
+  @Delete(':id')
+  @Roles('ORG_ADMIN', 'PLATFORM_ADMIN')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deleteOrganization(
+    @Param('id') id: string,
+    @CurrentUser() user: Prisma.User,
+    @OrgId() orgId: string,
+  ) {
+    if (user.role !== 'PLATFORM_ADMIN' && orgId !== id) {
+      throw new ForbiddenException('Cannot delete another organization');
+    }
+    await this.service.deleteOrganization(id, user);
   }
 }

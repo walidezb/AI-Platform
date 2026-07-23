@@ -113,6 +113,7 @@ enum OrgStatus {
   SUSPENDED
   TRIAL
   CANCELED
+  DELETED
 }
 
 enum NotificationType {
@@ -154,6 +155,7 @@ model Organization {
   isSuspended          Boolean          @default(false)
   suspendedAt          DateTime?
   suspendedReason      String?
+  deletedAt            DateTime?
   defaultLanguage      Language         @default(EN)
   createdAt            DateTime         @default(now())
   updatedAt            DateTime         @updatedAt
@@ -249,6 +251,7 @@ model User {
   inviteOpenedAt        DateTime?
   inviteStatus          InviteStatus     @default(PENDING)
   lastActiveAt          DateTime?
+  deletedAt             DateTime?
   createdAt             DateTime         @default(now())
   updatedAt             DateTime         @updatedAt
 

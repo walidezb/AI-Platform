@@ -35,6 +35,8 @@ export interface InviteStats {
   expired: number;
 }
 
+import { generateInviteToken, hashToken } from '../common/utils/token.utils';
+
 @Injectable()
 export class InvitationsService {
   constructor(
@@ -43,14 +45,14 @@ export class InvitationsService {
     private config: ConfigService,
   ) {}
 
-  private generateToken(): string {
-    return randomUUID().replace(/-/g, ''); // 32-char hex token
+  private generateToken(): { rawToken: string; tokenHash: string } {
+    return generateInviteToken();
   }
 
-  private buildInviteUrl(token: string): string {
+  private buildInviteUrl(rawToken: string): string {
     const appUrl =
       this.config.get<string>('APP_URL') || 'http://localhost:3000';
-    return `${appUrl}/onboarding/${token}`;
+    return `${appUrl}/onboarding/${rawToken}`;
   }
 
   /* ─── Computed invite status ─── */
@@ -120,7 +122,7 @@ export class InvitationsService {
       );
     }
 
-    const token = this.generateToken();
+    const { rawToken, tokenHash } = this.generateToken();
     const now = new Date();
     const expiry = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000); // 14 days
 
@@ -129,7 +131,7 @@ export class InvitationsService {
       user = await this.prisma.user.update({
         where: { id: existing.id },
         data: {
-          onboardingToken: token,
+          onboardingToken: tokenHash,
           onboardingTokenExpiry: expiry,
           inviteExpiresAt: expiry,
           invitedAt: now,
@@ -146,11 +148,11 @@ export class InvitationsService {
           organizationId: orgId,
           email: dto.email,
           fullName: dto.fullName,
-          clerkId: `pending_${token}`,
+          clerkId: `pending_${rawToken}`,
           role: 'LEARNER',
           departmentId: dto.departmentId || null,
           jobTitle: dto.jobTitle || null,
-          onboardingToken: token,
+          onboardingToken: tokenHash,
           onboardingTokenExpiry: expiry,
           inviteExpiresAt: expiry,
           invitedAt: now,
@@ -160,7 +162,7 @@ export class InvitationsService {
       });
     }
 
-    const inviteLink = this.buildInviteUrl(token);
+    const inviteLink = this.buildInviteUrl(rawToken);
 
     this.email
       .sendInviteEmail({
@@ -173,7 +175,7 @@ export class InvitationsService {
       })
       .catch((err) => console.error('Email send failed:', err));
 
-    return { userId: user.id, inviteLink, token };
+    return { userId: user.id, inviteLink, token: rawToken };
   }
 
   async bulkInvite(
@@ -192,9 +194,10 @@ export class InvitationsService {
   }
 
   async validateToken(token: string) {
+    const tokenHash = hashToken(token);
     const user = await this.prisma.user.findFirst({
       where: {
-        onboardingToken: token,
+        onboardingToken: tokenHash,
         onboardingTokenExpiry: { gte: new Date() },
       },
       include: {
@@ -355,14 +358,14 @@ export class InvitationsService {
       throw new BadRequestException('User has already completed onboarding');
     }
 
-    const newToken = this.generateToken();
+    const { rawToken, tokenHash } = this.generateToken();
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 14);
 
     await this.prisma.user.update({
       where: { id: userId },
       data: {
-        onboardingToken: newToken,
+        onboardingToken: tokenHash,
         onboardingTokenExpiry: expiresAt,
         inviteExpiresAt: expiresAt,
         invitedAt: new Date(),
@@ -371,7 +374,7 @@ export class InvitationsService {
       },
     });
 
-    const link = this.buildInviteUrl(newToken);
+    const link = this.buildInviteUrl(rawToken);
 
     await this.email
       .sendInviteEmail({
@@ -428,9 +431,10 @@ export class InvitationsService {
   }
 
   async markTokenOpened(token: string) {
+    const tokenHash = hashToken(token);
     const user = await this.prisma.user.findFirst({
       where: {
-        onboardingToken: token,
+        onboardingToken: tokenHash,
         onboardingTokenExpiry: { gte: new Date() },
       },
     });

@@ -24,6 +24,12 @@ export class OrgActiveGuard implements CanActivate {
       select: { status: true, isSuspended: true },
     });
 
+    if (org?.status === 'DELETED') {
+      throw new ForbiddenException(
+        'This organization has been deleted. Contact support.',
+      );
+    }
+
     if (org?.status === 'SUSPENDED' || org?.isSuspended) {
       throw new ForbiddenException(
         'Your organization has been suspended. Please contact support.',

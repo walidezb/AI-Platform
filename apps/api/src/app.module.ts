@@ -43,12 +43,16 @@ import { CacheModule } from './cache/cache.module';
 import { ETagMiddleware } from './middleware/etag.middleware';
 import { TestSeedModule } from './test-seed/test-seed.module';
 import { HealthModule } from './health/health.module';
+import { WebhooksModule } from './webhooks/webhooks.module';
+
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    ScheduleModule.forRoot(),
     EventEmitterModule.forRoot(),
     CacheModule,
     PrismaModule,
@@ -116,6 +120,7 @@ import { HealthModule } from './health/health.module';
     BillingModule,
     AdminModule,
     HealthModule,
+    WebhooksModule,
     ...(process.env.NODE_ENV !== 'production' ? [TestSeedModule] : []),
   ],
   controllers: [AppController, InternalController],

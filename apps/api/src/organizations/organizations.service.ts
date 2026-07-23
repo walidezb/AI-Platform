@@ -2,7 +2,10 @@ import {
   Injectable,
   ConflictException,
   NotFoundException,
+  ForbiddenException,
+  Logger,
 } from '@nestjs/common';
+import { Cron } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateOrgDto } from './dto/create-org.dto';
 import { UpdateOrgDto } from './dto/update-org.dto';
@@ -10,7 +13,25 @@ import { slugify } from '../common/utils/slugify';
 
 @Injectable()
 export class OrganizationsService {
+  private readonly logger = new Logger(OrganizationsService.name);
+
   constructor(private prisma: PrismaService) {}
+
+  @Cron('0 2 * * *')
+  async cleanOrphanedOrgs() {
+    const orphans = await this.prisma.organization.findMany({
+      where: {
+        users: { none: {} },
+        createdAt: { lt: new Date(Date.now() - 60 * 60 * 1000) },
+      },
+    });
+    if (orphans.length > 0) {
+      this.logger.warn(`Deleting ${orphans.length} orphaned orgs`);
+      await this.prisma.organization.deleteMany({
+        where: { id: { in: orphans.map((o) => o.id) } },
+      });
+    }
+  }
 
   async createOrganization(dto: CreateOrgDto) {
     const slug = dto.slug
@@ -28,30 +49,33 @@ export class OrganizationsService {
     }
 
     // Use transaction to create org + first admin user atomically
-    return this.prisma.$transaction(async (tx) => {
-      const org = await tx.organization.create({
-        data: {
-          name: dto.name,
-          slug,
-          industry: dto.industry,
-          planTier: dto.planTier || 'STARTER',
-        },
-      });
+    return this.prisma.$transaction(
+      async (tx) => {
+        const org = await tx.organization.create({
+          data: {
+            name: dto.name,
+            slug,
+            industry: dto.industry,
+            planTier: dto.planTier || 'STARTER',
+          },
+        });
 
-      const user = await tx.user.create({
-        data: {
-          organizationId: org.id,
-          clerkId: dto.clerkId,
-          email: dto.email,
-          fullName: dto.fullName,
-          role: 'ORG_ADMIN',
-          invitationStatus: 'ACCEPTED',
-          onboardingCompletedAt: new Date(),
-        },
-      });
+        const user = await tx.user.create({
+          data: {
+            organizationId: org.id,
+            clerkId: dto.clerkId,
+            email: dto.email,
+            fullName: dto.fullName,
+            role: 'ORG_ADMIN',
+            invitationStatus: 'ACCEPTED',
+            onboardingCompletedAt: new Date(),
+          },
+        });
 
-      return { org, user };
-    });
+        return { org, user };
+      },
+      { timeout: 10000 },
+    );
   }
 
   private async generateUniqueSlug(name: string): Promise<string> {
@@ -173,6 +197,42 @@ export class OrganizationsService {
         defaultLanguage: dto.defaultLanguage,
       },
     });
+  }
+
+  async deleteOrganization(orgId: string, requestingUser: any) {
+    if (
+      requestingUser.role !== 'PLATFORM_ADMIN' &&
+      requestingUser.organizationId !== orgId
+    ) {
+      throw new ForbiddenException('Cannot delete another organization');
+    }
+    if (
+      requestingUser.role !== 'ORG_ADMIN' &&
+      requestingUser.role !== 'PLATFORM_ADMIN'
+    ) {
+      throw new ForbiddenException(
+        'Only Org Admins can delete the organization',
+      );
+    }
+
+    const org = await this.prisma.organization.findUnique({
+      where: { id: orgId },
+      select: { slug: true },
+    });
+    if (!org) throw new NotFoundException('Organization not found');
+
+    await this.prisma.organization.update({
+      where: { id: orgId },
+      data: {
+        status: 'DELETED',
+        deletedAt: new Date(),
+        slug: `${org.slug}_deleted_${Date.now()}`,
+      },
+    });
+
+    this.logger.warn(
+      `Organization ${orgId} deleted by user ${requestingUser.id}`,
+    );
   }
 
   async getPresignedUploadUrl(orgId: string, fileType: string) {

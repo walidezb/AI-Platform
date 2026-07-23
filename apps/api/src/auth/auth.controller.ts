@@ -11,6 +11,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { ProgressService } from '../progress/progress.service';
 import { Public } from './decorators/public.decorator';
 import { CurrentUser } from './decorators/current-user.decorator';
+import { hashToken } from '../common/utils/token.utils';
 
 import { AuthThrottle } from './throttle.config';
 import { createClerkClient } from '@clerk/backend';
@@ -98,8 +99,9 @@ export class AuthController {
       throw new UnauthorizedException('Missing required fields for sync');
     }
 
+    const tokenHash = hashToken(body.token);
     const user = await this.prisma.user.findFirst({
-      where: { onboardingToken: body.token },
+      where: { onboardingToken: tokenHash },
     });
     if (!user) {
       throw new NotFoundException('Invalid onboarding token');

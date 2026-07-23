@@ -16,6 +16,7 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { AssessmentService } from './assessment.service';
 import { QueueService } from '../queues/queue.service';
+import { hashToken } from '../common/utils/token.utils';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { OrgId } from '../auth/decorators/org-id.decorator';
 import { Public } from '../auth/decorators/public.decorator';
@@ -133,9 +134,10 @@ export class AssessmentController {
     if (currentUser) {
       userId = currentUser.id;
     } else if (onboardingToken) {
+      const tokenHash = hashToken(onboardingToken);
       const user = await this.prisma.user.findFirst({
         where: {
-          onboardingToken,
+          onboardingToken: tokenHash,
           onboardingTokenExpiry: { gte: new Date() },
         },
       });

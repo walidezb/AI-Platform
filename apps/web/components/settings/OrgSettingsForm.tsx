@@ -8,6 +8,8 @@ import { Loader2, ChevronRight, AlertTriangle } from 'lucide-react';
 import { notify } from '@/lib/toast';
 import { formatDate } from '@/lib/utils/date';
 
+import { useRouter } from 'next/navigation';
+import { apiDelete } from '@/lib/api';
 import { useOrgProfile, useUpdateOrg } from '@/hooks/manager/useOrgProfile';
 import { LogoUpload } from './LogoUpload';
 import { Card, CardContent } from '@/components/ui/card';
@@ -67,9 +69,11 @@ interface OrgSettingsFormProps {
 export function OrgSettingsForm({ orgId }: OrgSettingsFormProps) {
   const { data: org, isLoading, error } = useOrgProfile(orgId);
   const updateOrgMutation = useUpdateOrg(orgId);
+  const router = useRouter();
   
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [deleteConfirmName, setDeleteConfirmName] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
   
   const {
     register,
@@ -138,10 +142,18 @@ export function OrgSettingsForm({ orgId }: OrgSettingsFormProps) {
     }
   };
 
-  const handleDeleteConfirm = () => {
-    setIsDeleteDialogOpen(false);
-    setDeleteConfirmName('');
-    notify.warning('Please contact support to complete deletion');
+  const handleDeleteConfirm = async () => {
+    setIsDeleting(true);
+    try {
+      await apiDelete(`/orgs/${org.id}`);
+      notify.success('Organization deleted');
+      setIsDeleteDialogOpen(false);
+      setDeleteConfirmName('');
+      router.push('/sign-in');
+    } catch {
+      notify.error('Failed to delete organization');
+      setIsDeleting(false);
+    }
   };
 
   return (
@@ -347,11 +359,11 @@ export function OrgSettingsForm({ orgId }: OrgSettingsFormProps) {
             <Button
               variant="destructive"
               size="sm"
-              disabled={deleteConfirmName !== org.name}
+              disabled={deleteConfirmName !== org.name || isDeleting}
               onClick={handleDeleteConfirm}
               className="text-xs font-bold"
             >
-              Confirm Delete
+              {isDeleting ? 'Deleting...' : 'Confirm Delete'}
             </Button>
           </DialogFooter>
         </DialogContent>

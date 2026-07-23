@@ -99,6 +99,17 @@ export function createApiClient(getToken: () => Promise<string | null>) {
 
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
+        if (res.status === 401) {
+          toast.error('Session expired', 'Please sign in again.');
+          if (typeof window !== 'undefined') {
+            window.location.href = '/sign-in';
+          }
+          throw new ApiError(401, 'UNAUTHORIZED');
+        }
+        if (res.status === 403) {
+          toast.error('Permission Denied', 'You do not have permission to perform this action.');
+          throw new ApiError(403, 'FORBIDDEN');
+        }
         if (res.status === 402) {
           const msg =
             errorData.detail?.message ||
@@ -108,6 +119,10 @@ export function createApiClient(getToken: () => Promise<string | null>) {
           throw new ApiError(402, 'BUDGET_EXCEEDED');
         }
         throw new ApiError(res.status, errorData.message || 'Request failed');
+      }
+
+      if (res.status === 204) {
+        return undefined as T;
       }
 
       return res.json();

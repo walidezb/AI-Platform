@@ -18,3 +18,11 @@ export const apiClient = {
     return client.delete<T>(path, options);
   },
 };
+
+export async function apiDelete<T>(
+  url: string,
+  options?: RequestInit,
+): Promise<T> {
+  const client = createApiClient(async () => null);
+  return client.delete<T>(url, options);
+}

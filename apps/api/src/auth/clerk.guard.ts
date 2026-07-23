@@ -176,6 +176,13 @@ export class ClerkGuard implements CanActivate {
         });
       }
 
+      if (user.deletedAt) {
+        throw new UnauthorizedException({
+          message: 'Account has been deleted',
+          code: 'ACCOUNT_DELETED',
+        });
+      }
+
       // Check organization suspension
       if (user.organization?.isSuspended) {
         throw new ForbiddenException({
