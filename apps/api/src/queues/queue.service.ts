@@ -23,6 +23,8 @@ export class QueueService {
     private exerciseEvaluationQueue: Bull.Queue,
     @InjectQueue(QUEUE_NAMES.NOTIFICATION)
     private notificationQueue: Bull.Queue,
+    @InjectQueue(QUEUE_NAMES.STRIPE_USAGE)
+    private stripeUsageQueue: Bull.Queue,
   ) {}
 
   // Schedule daily stalled learner detection job
@@ -132,6 +134,16 @@ export class QueueService {
       payload,
       { attempts: 5 }, // emails should retry aggressively
     );
+  }
+
+  addStripeUsageReportJob(payload: {
+    organizationId: string;
+    period: string;
+  }): Promise<Bull.Job> {
+    return this.stripeUsageQueue.add('report-usage', payload, {
+      attempts: 3,
+      backoff: { type: 'exponential', delay: 2000 },
+    });
   }
 
   // Get queue health stats (used by admin dashboard)

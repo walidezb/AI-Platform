@@ -153,6 +153,9 @@ async function bootstrap() {
   const notificationQueue = app.get<Bull.Queue>(
     getQueueToken(QUEUE_NAMES.NOTIFICATION),
   );
+  const stripeUsageQueue = app.get<Bull.Queue>(
+    getQueueToken(QUEUE_NAMES.STRIPE_USAGE),
+  );
 
   createBullBoard({
     queues: [
@@ -161,6 +164,7 @@ async function bootstrap() {
       new BullAdapter(resourceQueue),
       new BullAdapter(exerciseQueue),
       new BullAdapter(notificationQueue),
+      new BullAdapter(stripeUsageQueue),
     ],
     serverAdapter,
   });

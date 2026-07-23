@@ -1,13 +1,20 @@
-import { clerkMiddleware, createRouteMatcher, clerkClient } from '@clerk/nextjs/server';
-import createMiddleware from 'next-intl/middleware';
-import { NextRequest } from 'next/server';
+import {
+  clerkMiddleware,
+  createRouteMatcher,
+} from '@clerk/nextjs/server';
+import createIntlMiddleware from 'next-intl/middleware';
+import { NextRequest, NextResponse } from 'next/server';
 
-const intlMiddleware = createMiddleware({
-  locales: ['en', 'ar'],
-  defaultLocale: 'en',
+const locales = ['en', 'ar'];
+const defaultLocale = 'en';
+
+const intlMiddleware = createIntlMiddleware({
+  locales,
+  defaultLocale,
   localePrefix: 'as-needed',
 });
 
+// ── Public routes (no auth required) ──
 const isPublicRoute = createRouteMatcher([
   '/',
   '/(ar)?',
@@ -21,50 +28,53 @@ const isPublicRoute = createRouteMatcher([
   '/(ar)?/onboarding/setup',
   '/onboarding/:token*',
   '/(ar)?/onboarding/:token*',
+  '/security-policy',
+  '/.well-known/security.txt',
+  '/security.txt',
+  '/api/health',
   '/api/webhooks(.*)',
   '/design-system(.*)',
 ]);
 
-export default clerkMiddleware(async (auth, request) => {
-  const { pathname } = request.nextUrl;
+export default clerkMiddleware(async (auth, req: NextRequest) => {
+  const { pathname } = req.nextUrl;
 
-  // Skip intl middleware for API routes, Next.js internals, admin routes, or static files
+  // Protect all /admin/* routes before serving page shell
   if (
-    pathname.startsWith('/api/') ||
-    pathname.startsWith('/_next/') ||
     pathname.startsWith('/admin') ||
-    pathname.includes('.')
+    pathname.startsWith('/ar/admin')
   ) {
-    return;
+    const { userId } = await auth();
+    if (!userId) {
+      const signInUrl = new URL('/sign-in', req.url);
+      signInUrl.searchParams.set('redirect_url', req.url);
+      return NextResponse.redirect(signInUrl);
+    }
   }
 
-  // If it's not a public route, enforce authentication
-  if (!isPublicRoute(request)) {
+  // Skip intl middleware for API routes or static files
+  if (
+    !pathname.startsWith('/api/') &&
+    !pathname.startsWith('/_next/') &&
+    !pathname.includes('.')
+  ) {
+    const intlResponse = intlMiddleware(req);
+    if (intlResponse.status !== 200) {
+      return intlResponse;
+    }
+  }
+
+  // Protect all non-public routes
+  if (!isPublicRoute(req)) {
     await auth.protect();
-
-    const { userId, sessionClaims } = await auth();
-    const metadata = (sessionClaims?.publicMetadata || {}) as Record<string, unknown>;
-    let role = metadata.role;
-
-    if (userId && !role) {
-      try {
-        const client = await clerkClient();
-        const user = await client.users.getUser(userId);
-        role = user.publicMetadata?.role;
-      } catch (err) {
-        console.error('Error fetching Clerk user metadata fallback:', err);
-      }
-    }
-
-    if (userId && !role && !pathname.endsWith('/onboarding/setup')) {
-      const redirectUrl = new URL('/onboarding/setup', request.url);
-      return intlMiddleware(new NextRequest(redirectUrl, request));
-    }
   }
 
-  return intlMiddleware(request);
+  return intlMiddleware(req);
 });
 
 export const config = {
-  matcher: ['/((?!api|_next|_vercel|.*\\..*).*)'],
+  matcher: [
+    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
+    '/(api|trpc)(.*)',
+  ],
 };

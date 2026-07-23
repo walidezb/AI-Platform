@@ -5,6 +5,7 @@ export const QUEUE_NAMES = {
   EXERCISE_GENERATION: 'exercise-generation-queue',
   EXERCISE_EVALUATION: 'exercise-evaluation-queue',
   NOTIFICATION: 'notification-queue',
+  STRIPE_USAGE: 'stripe-usage-queue',
 } as const;
 
 export const JOB_NAMES = {

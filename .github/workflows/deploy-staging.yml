@@ -45,6 +45,16 @@ jobs:
     environment: staging
     steps:
       - uses: actions/checkout@v4
+
+      - name: Build AI Docker image
+        run: |
+          docker build -t ghcr.io/${{ github.repository }}/learnai-ai:staging apps/ai/
+
+      - name: Push to GitHub Container Registry
+        run: |
+          echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+          docker push ghcr.io/${{ github.repository }}/learnai-ai:staging
+
       - name: Deploy AI to Railway
         run: |
           npm install -g @railway/cli

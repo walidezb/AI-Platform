@@ -549,7 +549,7 @@ export default function DesignSystemPage() {
             {activeSection === 'toasts' && (
               <motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
                 <PageHeader 
-                  title="Toasts & Alerts" 
+                  title="Toast Notifications (Sonner)" 
                   subtitle="Micro-notifications triggerable by standard CRUD promises or actions." 
                   badge="Toasts"
                 />
@@ -558,22 +558,60 @@ export default function DesignSystemPage() {
                     <CardTitle>Sonner Notification Dispatcher</CardTitle>
                     <CardDescription>Trigger custom modal logs and check their rendering placements.</CardDescription>
                   </CardHeader>
-                  <CardContent className="flex flex-wrap gap-4">
-                    <Button variant="secondary" onClick={() => notify.success('Employee updated', 'Public user profile changed successfully.')}>
-                      Trigger Success
+                  <CardContent className="flex flex-wrap gap-3">
+                    <Button variant="default" onClick={() => notify.success('Changes saved successfully!')}>
+                      Success Toast
                     </Button>
-                    <Button variant="secondary" onClick={() => notify.error('Critical failure', 'Database validation check timed out.')}>
-                      Trigger Error
+                    <Button variant="destructive" onClick={() => notify.error('Something went wrong. Please try again.')}>
+                      Error Toast
                     </Button>
-                    <Button variant="secondary" onClick={() => notify.warning('Resource limit', 'You are approaching your team subscription cap.')}>
-                      Trigger Warning
+                    <Button variant="outline" onClick={() => notify.warning("You've used 80% of your AI budget.")}>
+                      Warning Toast
                     </Button>
-                    <Button variant="secondary" onClick={() => notify.info('System updates', 'Platform core node migrated successfully.')}>
-                      Trigger Info
+                    <Button variant="outline" onClick={() => notify.info('Your path is being generated...')}>
+                      Info Toast
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        const id = notify.loading('Generating your learning path...');
+                        setTimeout(() => {
+                          notify.dismiss(id);
+                          notify.success('Path ready! 🎉');
+                        }, 2000);
+                      }}
+                    >
+                      Loading → Success
                     </Button>
                     <Button variant="secondary" onClick={handlePromiseToast}>
-                      Trigger Async Promise
+                      Promise Toast
                     </Button>
+                  </CardContent>
+                </Card>
+
+                {/* New in Phase 7 Section */}
+                <Card className="bg-card border-border">
+                  <CardHeader>
+                    <CardTitle className="text-base font-bold text-amber-400">✨ New in Phase 7</CardTitle>
+                    <CardDescription>Major architectural enhancements across the platform.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-3 text-xs text-muted-foreground">
+                    <div className="flex items-center justify-between p-2.5 rounded-lg bg-secondary/30 border border-border">
+                      <span className="font-semibold text-foreground">RTL Support</span>
+                      <a href="/ar" className="text-primary underline">Try Arabic Layout (/ar)</a>
+                    </div>
+                    <div className="flex items-center justify-between p-2.5 rounded-lg bg-secondary/30 border border-border">
+                      <span className="font-semibold text-foreground">Sonner Toast System</span>
+                      <span>Replaced legacy toast with Sonner</span>
+                    </div>
+                    <div className="flex items-center justify-between p-2.5 rounded-lg bg-secondary/30 border border-border">
+                      <span className="font-semibold text-foreground">Error Boundary Sentry Integration</span>
+                      <span>Proper Sentry.withScope capture</span>
+                    </div>
+                    <div className="flex items-center justify-between p-2.5 rounded-lg bg-secondary/30 border border-border">
+                      <span className="font-semibold text-foreground">Mobile Breakpoint Layouts</span>
+                      <span>Verified from 375px to 1440px</span>
+                    </div>
                   </CardContent>
                 </Card>
               </motion.section>

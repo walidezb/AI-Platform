@@ -22,6 +22,7 @@ import { PrismaModule } from '../prisma/prisma.module';
       { name: QUEUE_NAMES.EXERCISE_GENERATION },
       { name: QUEUE_NAMES.EXERCISE_EVALUATION },
       { name: QUEUE_NAMES.NOTIFICATION },
+      { name: QUEUE_NAMES.STRIPE_USAGE },
     ),
     NotificationsModule,
     PrismaModule,

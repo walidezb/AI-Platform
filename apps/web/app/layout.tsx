@@ -9,6 +9,7 @@ import { Toaster } from 'sonner';
 import './globals.css';
 import { QueryProvider } from '../providers/query-provider';
 import { cn } from "@/lib/utils";
+import type { Metadata } from 'next';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -38,8 +39,6 @@ const dmSans = DM_Sans({
   subsets: ['latin'],
   variable: '--font-dm-sans',
 });
-
-import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: {
@@ -92,15 +91,15 @@ export default async function RootLayout({
             'antialiased bg-background text-foreground min-h-screen'
           )}
         >
-          <NextIntlClientProvider locale={locale} messages={messages}>
-            <QueryProvider>
-              <PostHogProvider>
+          <PostHogProvider>
+            <NextIntlClientProvider locale={locale} messages={messages}>
+              <QueryProvider>
                 <Suspense fallback={null}>
                   <PageViewTracker />
                 </Suspense>
                 {children}
                 <Toaster
-                  position={isRtl ? 'bottom-left' : 'bottom-right'}
+                  position={isRtl ? 'top-left' : 'top-right'}
                   richColors
                   closeButton
                   toastOptions={{
@@ -117,9 +116,9 @@ export default async function RootLayout({
                   expand={false}
                   visibleToasts={3}
                 />
-              </PostHogProvider>
-            </QueryProvider>
-          </NextIntlClientProvider>
+              </QueryProvider>
+            </NextIntlClientProvider>
+          </PostHogProvider>
         </body>
       </html>
     </ClerkProvider>

@@ -6,15 +6,20 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateOrgDto } from './dto/create-org.dto';
 import { UpdateOrgDto } from './dto/update-org.dto';
+import { slugify } from '../common/utils/slugify';
 
 @Injectable()
 export class OrganizationsService {
   constructor(private prisma: PrismaService) {}
 
   async createOrganization(dto: CreateOrgDto) {
+    const slug = dto.slug
+      ? dto.slug
+      : await this.generateUniqueSlug(dto.name);
+
     // Check slug is not taken
     const existing = await this.prisma.organization.findUnique({
-      where: { slug: dto.slug },
+      where: { slug },
     });
     if (existing) {
       throw new ConflictException(
@@ -27,7 +32,7 @@ export class OrganizationsService {
       const org = await tx.organization.create({
         data: {
           name: dto.name,
-          slug: dto.slug,
+          slug,
           industry: dto.industry,
           planTier: dto.planTier || 'STARTER',
         },
@@ -47,6 +52,20 @@ export class OrganizationsService {
 
       return { org, user };
     });
+  }
+
+  private async generateUniqueSlug(name: string): Promise<string> {
+    const base = slugify(name);
+    let slug = base;
+    let suffix = 1;
+    while (
+      await this.prisma.organization.findUnique({
+        where: { slug },
+      })
+    ) {
+      slug = `${base}-${suffix++}`;
+    }
+    return slug;
   }
 
   async findById(id: string) {
