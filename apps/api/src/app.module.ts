@@ -5,6 +5,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
 import { BullModule } from '@nestjs/bull';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { ThrottlerStorageRedisService } from '@nest-lab/throttler-storage-redis';
+import Redis from 'ioredis';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -58,11 +59,17 @@ import { HealthModule } from './health/health.module';
         throttlers: [
           {
             name: 'global',
-            ttl: 60000, // 1 minute window
-            limit: 100, // 100 requests per minute per IP
+            ttl: 60000,
+            limit: 100,
           },
         ],
-        storage: new ThrottlerStorageRedisService(config.get('REDIS_URL')),
+        storage: new ThrottlerStorageRedisService(
+          new Redis(config.get<string>('REDIS_URL') ?? 'redis://localhost:6379', {
+            enableReadyCheck: false,
+            maxRetriesPerRequest: 3,
+            tls: config.get('REDIS_TLS') === 'true' ? {} : undefined,
+          }),
+        ),
       }),
       inject: [ConfigService],
     }),

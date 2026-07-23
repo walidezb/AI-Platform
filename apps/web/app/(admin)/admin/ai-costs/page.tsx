@@ -282,8 +282,8 @@ export default function AdminAiCostsPage() {
           <Building2 className="h-4 w-4 text-amber-400" />
           Cost by Organization — This Month
         </p>
-        <div className="rounded-lg border border-border overflow-hidden">
-          <Table>
+        <div className="overflow-x-auto -mx-4 md:-mx-6 px-4 md:px-6">
+          <Table className="min-w-[640px]">
             <TableHeader>
               <TableRow className="hover:bg-transparent border-border">
                 <TableHead className="text-muted-foreground">#</TableHead>

@@ -138,4 +138,41 @@ export class TestSeedController {
     });
     return { success: true, data: path };
   }
+
+  @Post('assessment')
+  async createTestAssessment(@Req() req: any, @Body() body: any) {
+    this.assertTestMode(req);
+
+    const userId =
+      body.userId ??
+      (
+        await this.prisma.user.create({
+          data: {
+            organizationId: body.organizationId,
+            email: `assess-${Date.now()}@test.learnai.com`,
+            fullName: 'Assessment Test User',
+            role: 'LEARNER',
+            clerkId: `test_assess_${Date.now()}`,
+          },
+        })
+      ).id;
+
+    const assessment = await this.prisma.assessment.create({
+      data: {
+        userId,
+        organizationId: body.organizationId,
+        status: 'COMPLETED',
+        completedAt: new Date(),
+        skillProfile: body.skillProfile ?? {
+          strengths: ['TypeScript', 'React', 'Node.js'],
+          gaps: ['System Design', 'Performance'],
+          level: 'intermediate',
+          recommended: ['Advanced TypeScript', 'System Design'],
+        },
+        conversationLog: [],
+      },
+    });
+
+    return { success: true, data: { ...assessment, userId } };
+  }
 }

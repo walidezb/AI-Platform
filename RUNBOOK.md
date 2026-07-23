@@ -114,3 +114,28 @@ await cacheService.delPattern('usage:org-id:*');
 | L1 | Automated Alerting (Sentry/BetterStack) | PagerDuty | Immediate |
 | L2 | Site Reliability Engineer | sre@yourplatform.com | 15 minutes |
 | L3 | Lead Platform Architect | lead@yourplatform.com | 30 minutes |
+
+---
+
+## 5. Setting Up Demo Accounts for Login
+
+After running `npx prisma db seed`, the demo accounts exist in the DB but need corresponding Clerk users before you can log in as them.
+
+For each demo account you want to use:
+
+1. Go to Clerk Dashboard → Users → "Create User"
+2. Fill in the email matching the seed user
+3. Set a temporary password
+4. Copy the Clerk User ID (starts with `user_...`)
+5. Update the DB `clerkId`:
+   ```sql
+   UPDATE "User" SET "clerkId" = 'user_xxxxx'
+   WHERE email = 'orgadmin@acme-corp.com';
+   ```
+
+Priority accounts to set up:
+- `admin@learnai.com` → `PLATFORM_ADMIN` (set `publicMetadata: { "role": "PLATFORM_ADMIN" }`)
+- `orgadmin@acme-corp.com` → `ORG_ADMIN` (for billing demo)
+- `manager@acme-corp.com` → `MANAGER`
+- `alice@acme-corp.com` → `LEARNER` (72% path)
+

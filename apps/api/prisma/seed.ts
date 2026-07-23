@@ -89,13 +89,17 @@ async function main() {
     update: {},
     create: {
       email: 'orgadmin@acme-corp.com',
-      fullName: 'James Crawford',
+      fullName: 'James Crawford (Org Admin)',
       role: 'ORG_ADMIN',
       organizationId: acme.id,
-      clerkId: 'seed_orgadmin_acme',
+      clerkId: 'seed_orgadmin_acme', // placeholder
+      preferredLanguage: 'EN',
     },
   });
   console.log(`✅ Org Admin: ${orgAdmin.fullName}`);
+  console.log(`   → To enable login: create a Clerk user`);
+  console.log(`     with email: orgadmin@acme-corp.com`);
+  console.log(`     then update clerkId in DB to match`);
 
   // ── 5. Demo Employees (3) ──
   const employees = [

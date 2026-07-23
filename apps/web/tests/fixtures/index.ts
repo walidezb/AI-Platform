@@ -6,6 +6,12 @@ export type TestFixtures = {
   testManager: { id: string; email: string; password: string };
   testEmployee: { id: string; email: string; inviteToken: string };
   testPath: { id: string; title: string };
+  testAssessment: {
+    id: string;
+    userId: string;
+    organizationId: string;
+    skillProfile: object;
+  };
 };
 
 const API_URL = process.env.TEST_API_URL ?? 'http://localhost:3001';
@@ -73,7 +79,6 @@ export const test = base.extend<TestFixtures>({
 
   /* ── Create a completed assessment + mock path ── */
   testPath: async ({ apiContext, testOrg }, use) => {
-    // Create a user with completed assessment
     const userRes = await apiContext.post('/test/seed/user', {
       data: {
         organizationId: testOrg.id,
@@ -85,7 +90,6 @@ export const test = base.extend<TestFixtures>({
     });
     const user = (await userRes.json()).data;
 
-    // Create a mock learning path for them
     const pathRes = await apiContext.post('/test/seed/path', {
       data: {
         organizationId: testOrg.id,
@@ -96,6 +100,23 @@ export const test = base.extend<TestFixtures>({
     });
     const path = (await pathRes.json()).data;
     await use(path);
+  },
+
+  /* ── Create a standalone completed assessment ── */
+  testAssessment: async ({ apiContext, testOrg }, use) => {
+    const res = await apiContext.post('/test/seed/assessment', {
+      data: {
+        organizationId: testOrg.id,
+        skillProfile: {
+          strengths: ['TypeScript', 'React'],
+          gaps: ['System Design'],
+          level: 'intermediate',
+          recommended: ['Advanced TypeScript'],
+        },
+      },
+    });
+    const assessment = (await res.json()).data;
+    await use(assessment);
   },
 });
 

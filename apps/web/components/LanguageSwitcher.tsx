@@ -10,25 +10,25 @@ export function LanguageSwitcher() {
   const locale = useLocale();
   const router = useRouter();
   const pathname = usePathname();
-  const { getToken, isSignedIn } = useAuth();
+  const { getToken } = useAuth();
 
   const switchLocale = async (newLocale: 'en' | 'ar') => {
     if (newLocale === locale) return;
 
-    // 1. Persist to cookie
+    // Persist to cookie (immediate)
     document.cookie = `NEXT_LOCALE=${newLocale};path=/;max-age=31536000`;
 
-    // 2. Persist to DB if signed in
-    if (isSignedIn) {
-      try {
-        const client = createApiClient(getToken);
-        await client.patch('/users/me/language', { language: newLocale });
-      } catch (err) {
-        console.error('Failed to sync language preference to DB:', err);
-      }
+    // Persist to DB (async — don't await, best-effort)
+    try {
+      const client = createApiClient(getToken);
+      await client.patch('/users/me/language', {
+        language: newLocale,
+      });
+    } catch {
+      // Non-critical: cookie still switches the UI
     }
 
-    // 3. Reconstruct path with/without locale prefix
+    // Reconstruct path
     const withoutLocale = pathname.startsWith('/ar')
       ? pathname.slice(3) || '/'
       : pathname;

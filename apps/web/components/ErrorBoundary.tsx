@@ -2,6 +2,7 @@
 
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { AlertOctagon } from 'lucide-react';
+import * as Sentry from '@sentry/nextjs';
 
 interface Props {
   children: ReactNode;
@@ -28,14 +29,12 @@ export class ErrorBoundary extends Component<Props, State> {
     console.error('[ErrorBoundary]', error, info);
     this.props.onError?.(error, info);
 
-    // Report to Sentry if available
-    /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-    if (typeof window !== 'undefined' && (window as any).Sentry) {
-      /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-      (window as any).Sentry.captureException(error, {
-        extra: { componentStack: info.componentStack },
-      });
-    }
+    // Report to Sentry using the proper SDK
+    Sentry.withScope((scope) => {
+      scope.setExtra('componentStack', info.componentStack);
+      scope.setTag('errorBoundary', 'true');
+      Sentry.captureException(error);
+    });
   }
 
   render() {

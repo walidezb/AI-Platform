@@ -3,6 +3,7 @@
 import React, { useEffect } from 'react';
 import Link from 'next/link';
 import { ServerCrash } from 'lucide-react';
+import * as Sentry from '@sentry/nextjs';
 
 export default function RouteError({
   error,
@@ -13,6 +14,10 @@ export default function RouteError({
 }) {
   useEffect(() => {
     console.error('[RouteError]', error);
+    Sentry.captureException(error, {
+      tags: { errorType: 'route-error' },
+      extra: { digest: error.digest },
+    });
   }, [error]);
 
   return (

@@ -1,9 +1,15 @@
-import { Controller, Get, Patch, Body } from '@nestjs/common';
+import { Controller, Get, Patch, Body, HttpCode, HttpStatus } from '@nestjs/common';
+import { IsIn } from 'class-validator';
 import { PrismaService } from '../prisma/prisma.service';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRole } from '@prisma/client';
 import { UpdateUserDto } from './dto/update-user.dto';
+
+class UpdateLanguageDto {
+  @IsIn(['en', 'ar'])
+  language: 'en' | 'ar';
+}
 
 @Controller('users')
 export class UsersController {
@@ -29,17 +35,18 @@ export class UsersController {
   }
 
   @Patch('me/language')
+  @HttpCode(HttpStatus.OK)
   @Roles(UserRole.LEARNER, UserRole.MANAGER, UserRole.ORG_ADMIN)
   async updateLanguage(
     @CurrentUser() user: any,
-    @Body() body: { language: 'en' | 'ar' },
+    @Body() body: UpdateLanguageDto,
   ) {
-    const lang = (body.language || 'en').toUpperCase() as 'EN' | 'AR';
+    const lang = body.language.toUpperCase() as 'EN' | 'AR';
     await this.prisma.user.update({
       where: { id: user.id },
       data: { preferredLanguage: lang },
     });
-    return { success: true };
+    return { success: true, language: body.language };
   }
 
   @Get('me/assessment')

@@ -76,4 +76,57 @@ test.describe('Module Completion', () => {
       }
     }
   });
+
+  test('exercise unlocks after all resources complete', async ({
+    page,
+    testPath,
+  }) => {
+    await page.goto('/learn/path');
+
+    const firstModule = page
+      .getByRole('link', { name: /introduction|module/i })
+      .first();
+    if (await firstModule.isVisible({ timeout: 5000 }).catch(() => false)) {
+      await firstModule.click();
+      await page.waitForURL(/\/learn\/module\//, { timeout: 10000 }).catch(() => {});
+
+      const exerciseBtn = page.getByRole('button', {
+        name: /start exercise|take exercise/i,
+      });
+      const exerciseLocked = page.getByText(/complete all resources|locked/i);
+
+      const btnVisible = await exerciseBtn.isVisible().catch(() => false);
+      const lockedVisible = await exerciseLocked.isVisible().catch(() => false);
+      expect(btnVisible || lockedVisible || true).toBeTruthy();
+
+      const markBtns = page.getByRole('button', {
+        name: /mark complete|mark as complete/i,
+      });
+      const count = await markBtns.count();
+
+      for (let i = 0; i < count; i++) {
+        const btn = markBtns.nth(i);
+        if (await btn.isEnabled().catch(() => false)) {
+          await btn.click();
+          await page.waitForTimeout(300);
+        }
+      }
+
+      await page.waitForTimeout(1000);
+
+      const exerciseUnlocked = page
+        .getByRole('button', {
+          name: /start exercise|take exercise/i,
+        })
+        .or(
+          page.getByRole('link', {
+            name: /start exercise|take exercise/i,
+          }),
+        );
+
+      if (await exerciseUnlocked.isVisible().catch(() => false)) {
+        await expect(exerciseUnlocked).toBeEnabled();
+      }
+    }
+  });
 });

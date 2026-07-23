@@ -67,24 +67,13 @@ test.describe('Onboarding Flow', () => {
 
   test('assessment complete shows skill profile', async ({
     page,
-    testEmployee,
+    testAssessment,
   }) => {
-    await page.goto(`/onboarding/${testEmployee.inviteToken}`);
-
-    const startBtn = page.getByRole('button', { name: /begin assessment|start assessment|continue/i });
-    if (await startBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await startBtn.click();
-    }
-
-    const input = page.getByPlaceholder(/type your message|message/i);
-    if (await input.isVisible({ timeout: 10000 }).catch(() => false)) {
-      await input.fill('I am an expert level developer with 10 years');
-      await page.keyboard.press('Enter');
-
-      // Wait for completion
-      await expect(
-        page.getByText(/assessment complete|skill profile/i).first(),
-      ).toBeVisible({ timeout: 15000 });
-    }
+    await page.goto(
+      `/onboarding/${testAssessment.userId}/assessment-complete`
+    );
+    await expect(
+      page.getByText(/TypeScript|React|skill profile/i).first(),
+    ).toBeVisible({ timeout: 10000 });
   });
 });
