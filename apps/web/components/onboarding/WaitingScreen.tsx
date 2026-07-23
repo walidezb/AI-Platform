@@ -9,6 +9,7 @@ import { OnboardingSteps } from './OnboardingSteps';
 import { NeuralNetworkAnimation } from './NeuralNetworkAnimation';
 import { GenerationSteps } from './GenerationSteps';
 import { formatElapsed } from '@/lib/utils/date';
+import { Button } from '@/components/ui/button';
 
 interface PathData {
   id: string;
@@ -16,7 +17,6 @@ interface PathData {
   totalMilestones: number;
   estimatedHours: number;
 }
-
 
 interface WaitingScreenProps {
   token: string;
@@ -27,30 +27,43 @@ interface WaitingScreenProps {
 
 const itemVariants = {
   hidden: { opacity: 0, y: 15 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.5 } }
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
 };
+
+const MAX_POLL_ATTEMPTS = 120; // 120 x 5s = 10 minutes max
 
 export function WaitingScreen({ token, userId }: WaitingScreenProps) {
   const router = useRouter();
-  const [status, setStatus] = useState<'ASSESSING' | 'GENERATING' | 'READY'>('GENERATING');
+  const [status, setStatus] = useState<'ASSESSING' | 'GENERATING' | 'READY' | 'TIMEOUT'>('GENERATING');
   const [pathData, setPathData] = useState<PathData | null>(null);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [attempts, setAttempts] = useState(0);
   const [dots, setDots] = useState('.');
 
   // Polling logic
   useEffect(() => {
+    if (status === 'TIMEOUT' || status === 'READY') return;
+
+    let pollAttempts = attempts;
+
     const poll = async () => {
+      pollAttempts++;
+      setAttempts(pollAttempts);
+
+      if (pollAttempts >= MAX_POLL_ATTEMPTS) {
+        setStatus('TIMEOUT');
+        return;
+      }
+
       try {
         const res = await fetch(`/api/path-status/${userId}?token=${token}`, {
           cache: 'no-store',
         });
         const data = await res.json();
-        
-        setStatus(data.status);
 
         if (data.pathReady && data.path) {
+          setStatus('READY');
           setPathData(data.path);
-          // Auto-redirect after 2.5s so they see the success card
           setTimeout(() => {
             router.push(`/onboarding/${token}/welcome-to-path`);
           }, 2500);
@@ -61,15 +74,16 @@ export function WaitingScreen({ token, userId }: WaitingScreenProps) {
     };
 
     poll(); // immediate trigger
-    const interval = setInterval(poll, 3000);
+    const interval = setInterval(poll, 5000);
     return () => clearInterval(interval);
-  }, [userId, token, router]);
+  }, [userId, token, router, status, attempts]);
 
   // Seconds counter timer
   useEffect(() => {
+    if (status === 'TIMEOUT') return;
     const timer = setInterval(() => setElapsedSeconds((s) => s + 1), 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [status]);
 
   // Dots indicator text timer
   useEffect(() => {
@@ -112,8 +126,48 @@ export function WaitingScreen({ token, userId }: WaitingScreenProps) {
 
               {/* Elapsed timing tracker */}
               <p className="text-xs text-slate-500 mt-6 tracking-wide">
-                ⏱ {formatElapsed(elapsedSeconds)} elapsed · Usually takes ~30 seconds
+                ⏱ {formatElapsed(elapsedSeconds)} elapsed ({attempts} check{attempts !== 1 ? 's' : ''})
               </p>
+            </motion.div>
+          )}
+
+          {status === 'TIMEOUT' && (
+            <motion.div
+              key="timeout"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0 }}
+              className="flex flex-col items-center gap-5 mt-4 text-center animate-in fade-in"
+            >
+              <div className="rounded-full bg-amber-500/10 p-4 border border-amber-500/20">
+                <Clock className="h-8 w-8 text-amber-400" />
+              </div>
+              <div>
+                <h3 className="font-heading text-xl font-bold text-white">
+                  Still Working on It...
+                </h3>
+                <p className="mt-2 text-sm text-slate-400 max-w-sm leading-relaxed">
+                  Your personalized learning path is taking a bit longer than usual. We&apos;ll notify your email as soon as it&apos;s ready!
+                </p>
+              </div>
+              <div className="flex gap-3 mt-2">
+                <Button
+                  variant="outline"
+                  className="bg-slate-900 border-slate-800 text-slate-200 hover:bg-slate-800 text-xs font-semibold"
+                  onClick={() => router.push('/learn/dashboard')}
+                >
+                  Go to Dashboard
+                </Button>
+                <Button
+                  className="bg-gradient-primary text-white text-xs font-bold"
+                  onClick={() => {
+                    setAttempts(0);
+                    setStatus('GENERATING');
+                  }}
+                >
+                  Keep Waiting
+                </Button>
+              </div>
             </motion.div>
           )}
 

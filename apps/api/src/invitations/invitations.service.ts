@@ -342,6 +342,9 @@ export class InvitationsService {
         onboardingLink: u.onboardingToken
           ? `${appUrl}/onboarding/${u.onboardingToken}`
           : null,
+        tokenPreview: u.onboardingToken && (computedStatus === 'PENDING' || computedStatus === 'IN_PROGRESS')
+          ? `...${u.onboardingToken.slice(-8)}`
+          : null,
         isExpired,
       };
     });

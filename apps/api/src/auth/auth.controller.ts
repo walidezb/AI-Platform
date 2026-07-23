@@ -93,38 +93,57 @@ export class AuthController {
   @Public()
   @Post('sync-learner')
   async syncLearner(
-    @Body() body: { token: string; clerkId: string; avatarUrl?: string },
+    @Body() body: { token?: string; clerkId: string; email?: string; fullName?: string; avatarUrl?: string },
   ) {
-    if (!body.token || !body.clerkId) {
-      throw new UnauthorizedException('Missing required fields for sync');
+    if (!body.clerkId) {
+      throw new UnauthorizedException('Missing clerkId for sync');
     }
 
-    const tokenHash = hashToken(body.token);
-    const user = await this.prisma.user.findFirst({
-      where: { onboardingToken: tokenHash },
+    // 1. Check if user already exists with this clerkId
+    let user = await this.prisma.user.findFirst({
+      where: { clerkId: body.clerkId },
     });
-    if (!user) {
-      throw new NotFoundException('Invalid onboarding token');
+
+    if (user) {
+      // Idempotent update
+      return this.prisma.user.update({
+        where: { id: user.id },
+        data: {
+          avatarUrl: body.avatarUrl || user.avatarUrl,
+          fullName: body.fullName || user.fullName,
+        },
+      });
     }
 
-    const updatedUser = await this.prisma.user.update({
-      where: { id: user.id },
-      data: {
-        clerkId: body.clerkId,
-        avatarUrl: body.avatarUrl || null,
-        invitationStatus: 'ACCEPTED',
-        onboardingCompletedAt: new Date(),
-      },
-    });
+    // 2. If token is provided, link to invited user
+    if (body.token) {
+      const tokenHash = hashToken(body.token);
+      user = await this.prisma.user.findFirst({
+        where: { onboardingToken: tokenHash },
+      });
 
-    // Sync role metadata to Clerk
-    await clerkClient.users.updateUserMetadata(body.clerkId, {
-      publicMetadata: {
-        role: updatedUser.role,
-      },
-    });
+      if (user) {
+        const updatedUser = await this.prisma.user.update({
+          where: { id: user.id },
+          data: {
+            clerkId: body.clerkId,
+            avatarUrl: body.avatarUrl || null,
+            invitationStatus: 'ACCEPTED',
+            onboardingCompletedAt: new Date(),
+          },
+        });
 
-    return updatedUser;
+        await clerkClient.users.updateUserMetadata(body.clerkId, {
+          publicMetadata: {
+            role: updatedUser.role,
+          },
+        }).catch((err) => this.logger.warn(`Failed to update Clerk metadata: ${err}`));
+
+        return updatedUser;
+      }
+    }
+
+    throw new NotFoundException('Invalid onboarding token or unsynced user');
   }
 
   @Get('me')

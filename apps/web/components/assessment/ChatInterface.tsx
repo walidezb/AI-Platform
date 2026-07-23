@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, User, Send, Loader2 } from 'lucide-react';
+import { Sparkles, User, Send, Loader2, AlertTriangle } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { Logo } from '@/components/ui/Logo';
 import { Button } from '@/components/ui/button';
@@ -38,6 +38,9 @@ export function ChatInterface({ token }: ChatInterfaceProps) {
   const [assessmentId, setAssessmentId] = useState<string | null>(null);
   const [isInitializing, setIsInitializing] = useState(true);
   const [budgetExceeded, setBudgetExceeded] = useState(false);
+  
+  const [showFinishButton, setShowFinishButton] = useState(false);
+  const [inputDisabled, setInputDisabled] = useState(false);
   
   // Draft restore states
   const [showRestorePrompt, setShowRestorePrompt] = useState(false);
@@ -184,6 +187,28 @@ export function ChatInterface({ token }: ChatInterfaceProps) {
         }
       );
 
+      if (response.status === 429) {
+        setMessages(prev =>
+          prev.map(m =>
+            m.id === aiMsgId
+              ? {
+                  ...m,
+                  content:
+                    "We've reached the session message limit for this assessment. " +
+                    "Based on our conversation, I have everything I need to build " +
+                    "your personalized learning path! Click **Finish Assessment** " +
+                    "when you're ready.",
+                  isStreaming: false,
+                }
+              : m
+          )
+        );
+        setInputDisabled(true);
+        setShowFinishButton(true);
+        setIsStreaming(false);
+        return;
+      }
+
       if (!response.ok || !response.body) {
         throw new Error('Failed to start stream');
       }
@@ -256,6 +281,81 @@ export function ChatInterface({ token }: ChatInterfaceProps) {
     }
   };
 
+  const handleRequestCompletion = async () => {
+    if (isStreaming || !assessmentId) return;
+    setInputDisabled(true);
+    setInputValue('');
+
+    const aiMsgId = crypto.randomUUID();
+    setMessages(prev => [
+      ...prev,
+      { id: crypto.randomUUID(), role: 'user', content: 'Please wrap up our assessment now.' },
+      { id: aiMsgId, role: 'assistant', content: '', isStreaming: true },
+    ]);
+    setIsStreaming(true);
+
+    try {
+      const response = await fetch(
+        `/api/assessment/${assessmentId}/message/stream`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-onboarding-token': token,
+          },
+          body: JSON.stringify({ userMessage: '[USER_REQUESTED_COMPLETION]' }),
+        }
+      );
+
+      if (!response.ok || !response.body) {
+        throw new Error('Failed to start stream');
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let streamedContent = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value);
+        const lines = chunk.split('\n');
+
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const rawJSON = line.slice(6).trim();
+          if (!rawJSON) continue;
+
+          try {
+            const data = JSON.parse(rawJSON);
+            if (data.type === 'token') {
+              streamedContent += data.token;
+              setMessages(prev =>
+                prev.map(m =>
+                  m.id === aiMsgId ? { ...m, content: streamedContent } : m
+                )
+              );
+            }
+            if (data.type === 'done' || data.type === 'complete') {
+              setIsComplete(true);
+            }
+          } catch (e) {
+            console.error(e);
+          }
+        }
+      }
+
+      setMessages(prev =>
+        prev.map(m => (m.id === aiMsgId ? { ...m, isStreaming: false } : m))
+      );
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsStreaming(false);
+    }
+  };
+
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     handleSend();
@@ -315,10 +415,29 @@ export function ChatInterface({ token }: ChatInterfaceProps) {
         <div className="max-w-3xl mx-auto">
           <div className="flex items-center justify-between mb-2">
             <Logo size="sm" />
-            <div className="text-xs text-slate-400 flex items-center gap-2 font-mono">
-              <span className="text-indigo-400 font-medium uppercase tracking-wide">Question {userTurnCount + 1} of ~{TOTAL_TURNS}</span>
-              <span className="text-slate-700">•</span>
-              <span>{progressPct}% complete</span>
+            <div className="flex items-center gap-3">
+              {userTurnCount >= 22 && userTurnCount < 30 && (
+                <div className="flex items-center gap-1.5 text-xs text-amber-400 font-medium">
+                  <AlertTriangle className="h-3.5 w-3.5" />
+                  <span>{30 - userTurnCount} message{30 - userTurnCount !== 1 ? 's' : ''} remaining</span>
+                </div>
+              )}
+              {(showFinishButton || userTurnCount >= 8) && !isComplete && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs font-semibold border-indigo-500/40 text-indigo-300 hover:bg-indigo-950/50 h-7"
+                  onClick={handleRequestCompletion}
+                  disabled={isStreaming}
+                >
+                  ✓ Finish Assessment
+                </Button>
+              )}
+              <div className="text-xs text-slate-400 flex items-center gap-2 font-mono">
+                <span className="text-indigo-400 font-medium uppercase tracking-wide">Question {userTurnCount + 1} of ~{TOTAL_TURNS}</span>
+                <span className="text-slate-700">•</span>
+                <span>{progressPct}% complete</span>
+              </div>
             </div>
           </div>
           {/* Progress bar */}
@@ -442,14 +561,14 @@ export function ChatInterface({ token }: ChatInterfaceProps) {
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               placeholder={isComplete ? t('assessmentDone') : t('typeMessage')}
-              disabled={isStreaming || isComplete}
+              disabled={isStreaming || isComplete || inputDisabled}
               className="flex-1 bg-slate-900 border-slate-850 text-slate-100 text-sm h-12 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 px-4"
               maxLength={2000}
               autoFocus
             />
             <Button
               type="submit"
-              disabled={!inputValue.trim() || isStreaming || isComplete}
+              disabled={!inputValue.trim() || isStreaming || isComplete || inputDisabled}
               className="h-12 w-12 shrink-0 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-500 hover:from-indigo-600 hover:to-violet-600 shadow-lg text-white"
               size="icon"
             >

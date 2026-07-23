@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useUser } from '@clerk/nextjs';
 import { Loader2, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -14,27 +15,56 @@ interface BeginButtonProps {
 
 export function BeginButton({ token, isReturning }: BeginButtonProps) {
   const router = useRouter();
+  const { user } = useUser();
   const [isLoading, setIsLoading] = useState(false);
 
   const handleBegin = async () => {
     setIsLoading(true);
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
-      const res = await fetch(`${apiUrl}/invitations/validate/${token}/open`, {
+
+      // 1. Mark token opened
+      await fetch(`${apiUrl}/invitations/validate/${token}/open`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
       });
 
-      if (!res.ok) {
-        throw new Error('Failed to mark token as opened');
+      // 2. Sync Clerk user to DB before proceeding
+      if (user?.id) {
+        const syncRes = await fetch(`${apiUrl}/auth/sync-learner`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            clerkId: user.id,
+            email: user.primaryEmailAddress?.emailAddress,
+            fullName: user.fullName || `${user.firstName || ''} ${user.lastName || ''}`.trim(),
+            avatarUrl: user.imageUrl,
+            token,
+          }),
+        });
+
+        if (!syncRes.ok) {
+          throw new Error('Failed to synchronize user profile');
+        }
       }
 
       router.push(`/onboarding/${token}/assessment`);
     } catch (err) {
       console.error(err);
-      toast.error('Failed to initialize onboarding session. Please try again.');
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      toast.error(
+        "We couldn't start your assessment. Please try again.",
+        {
+          description: process.env.NODE_ENV === 'development' ? message : undefined,
+          action: {
+            label: 'Retry',
+            onClick: handleBegin,
+          },
+          duration: 8000,
+        }
+      );
       setIsLoading(false);
     }
   };
@@ -57,7 +87,7 @@ export function BeginButton({ token, isReturning }: BeginButtonProps) {
       {isLoading ? (
         <>
           <Loader2 className="h-5 w-5 animate-spin shrink-0" />
-          Preparing your session...
+          Setting up your profile...
         </>
       ) : (
         <>

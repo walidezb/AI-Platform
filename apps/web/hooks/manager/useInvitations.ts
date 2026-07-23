@@ -23,6 +23,7 @@ export interface InvitationRow {
   completedAt: string | Date | null;
   inviteStatus: InviteStatus;
   onboardingLink: string | null;
+  tokenPreview?: string | null;
   isExpired: boolean;
 }
 

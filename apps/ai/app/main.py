@@ -1,3 +1,7 @@
+# ── IMPORTANT: config must be imported first ──
+# It sets up LangSmith env vars before LangChain loads
+import app.config as config  # noqa: F401 (side-effect import)
+
 import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware

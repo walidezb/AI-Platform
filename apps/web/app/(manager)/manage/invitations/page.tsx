@@ -15,6 +15,7 @@ import {
   Copy,
   RotateCw,
   Mail,
+  Link2,
 } from 'lucide-react';
 
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -381,6 +382,9 @@ export default function InvitationsPage() {
                     <TableHead className="text-slate-400">Job Title</TableHead>
                     <TableHead className="text-slate-400">Status</TableHead>
                     <TableHead className="text-slate-400">Invited</TableHead>
+                    <TableHead className="hidden lg:table-cell text-slate-400">
+                      Invite Link
+                    </TableHead>
                     <TableHead className="text-slate-400">Expires</TableHead>
                     <TableHead className="text-slate-400 text-right">
                       Actions
@@ -467,6 +471,20 @@ export default function InvitationsPage() {
                           <span className="text-sm text-slate-400">
                             {row.invitedAt ? formatDate(row.invitedAt) : '—'}
                           </span>
+                        </TableCell>
+
+                        {/* Invite link preview */}
+                        <TableCell className="hidden lg:table-cell">
+                          {row.tokenPreview ? (
+                            <div className="flex items-center gap-1.5">
+                              <Link2 className="h-3 w-3 text-slate-400 shrink-0" />
+                              <code className="text-xs text-slate-400 font-mono truncate max-w-[140px]">
+                                /onboard/{row.tokenPreview}
+                              </code>
+                            </div>
+                          ) : (
+                            <span className="text-xs text-slate-600">—</span>
+                          )}
                         </TableCell>
 
                         {/* Expires */}

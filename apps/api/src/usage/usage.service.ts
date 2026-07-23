@@ -1,3 +1,18 @@
+/**
+ * UsageService — AI token usage tracking
+ *
+ * Usage logging is handled in two ways:
+ * 1. AUTOMATIC: Decorate endpoints with @AiEndpoint({ feature, model })
+ *    and apply @UseInterceptors(UsageInterceptor). Response must include
+ *    tokensInput and tokensOutput fields.
+ *
+ * 2. MANUAL: Call usageService.logUsage({ ... }) directly in service
+ *    methods when you need more control (e.g., Python AI callbacks).
+ *    See: assessment.service.ts, paths.service.ts for examples.
+ *
+ * When adding NEW AI endpoints, always use one of these two approaches.
+ */
+
 import {
   Injectable,
   Logger,

@@ -37,6 +37,7 @@ enum AssessmentStatus {
   PENDING
   IN_PROGRESS
   COMPLETED
+  ABANDONED
 }
 
 enum ExperienceLevel {

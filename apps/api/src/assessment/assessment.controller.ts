@@ -25,14 +25,25 @@ import { SkipThrottle } from '@nestjs/throttler';
 import { Response } from 'express';
 import { BudgetGuard } from '../usage/budget.guard';
 
+import { AssessmentCleanupService } from './assessment-cleanup.service';
+import { Roles } from '../auth/decorators/roles.decorator';
+
 @Controller('assessment')
 export class AssessmentController {
   constructor(
     private service: AssessmentService,
+    private cleanupService: AssessmentCleanupService,
     private prisma: PrismaService,
     private config: ConfigService,
     private queue: QueueService,
   ) {}
+
+  @Post('cleanup')
+  @Roles('PLATFORM_ADMIN')
+  async runCleanup() {
+    const result = await this.cleanupService.runCleanupNow();
+    return { success: true, count: result.count };
+  }
 
   @Post('start')
   @UseGuards(BudgetGuard)
