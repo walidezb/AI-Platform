@@ -150,3 +150,44 @@ export function createApiClient(getToken: () => Promise<string | null>) {
     },
   };
 }
+
+export async function apiGet<T>(path: string, options?: RequestInit): Promise<T> {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(options?.headers as Record<string, string>),
+  };
+  if (typeof window !== 'undefined') {
+    const impToken = sessionStorage.getItem('impersonation_token');
+    if (impToken) {
+      headers['Authorization'] = `Bearer ${impToken}`;
+      headers['X-Impersonating'] = 'true';
+    }
+  }
+  const res = await fetch(`${apiUrl}${path}`, { ...options, method: 'GET', headers });
+  if (!res.ok) throw new ApiError(res.status, 'Request failed');
+  return res.json();
+}
+
+export async function apiPost<T>(path: string, body?: unknown, options?: RequestInit): Promise<T> {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(options?.headers as Record<string, string>),
+  };
+  if (typeof window !== 'undefined') {
+    const impToken = sessionStorage.getItem('impersonation_token');
+    if (impToken) {
+      headers['Authorization'] = `Bearer ${impToken}`;
+      headers['X-Impersonating'] = 'true';
+    }
+  }
+  const res = await fetch(`${apiUrl}${path}`, {
+    ...options,
+    method: 'POST',
+    headers,
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  if (!res.ok) throw new ApiError(res.status, 'Request failed');
+  return res.json();
+}
