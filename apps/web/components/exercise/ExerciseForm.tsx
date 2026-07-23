@@ -42,6 +42,7 @@ export function ExerciseForm({
   const [showHints, setShowHints] = useState(false);
   const [hintsRevealed, setRevealed] = useState(0);
   const [isSubmitting, setSubmitting] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   const isMCQ = exercise.exerciseType === 'MULTIPLE_CHOICE';
   const isWritten = exercise.exerciseType === 'WRITTEN';
@@ -295,7 +296,13 @@ export function ExerciseForm({
       <Button
         size="lg"
         className="w-full bg-gradient-primary"
-        onClick={handleSubmit}
+        onClick={() => {
+          if (isMCQ) {
+            setShowConfirmModal(true);
+          } else {
+            handleSubmit();
+          }
+        }}
         disabled={
           isSubmitting ||
           (isMCQ && !selectedOption) ||
@@ -314,6 +321,40 @@ export function ExerciseForm({
           </span>
         )}
       </Button>
+
+      {/* ── MCQ CONFIRMATION MODAL ── */}
+      {showConfirmModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <Card className="max-w-md w-full p-6 space-y-4 bg-slate-900 border-slate-800 text-white">
+            <h3 className="font-heading text-lg font-bold">Submit Your Answer?</h3>
+            <p className="text-sm text-slate-400">
+              Review your selected answer below. Once submitted, your attempt will be graded.
+            </p>
+            <div className="p-3 bg-slate-950 rounded-lg border border-slate-800">
+              <span className="text-xs text-slate-500 uppercase tracking-wider">Selected Option:</span>
+              <p className="text-sm font-semibold text-slate-200 mt-1">{selectedOption}</p>
+            </div>
+            <div className="flex gap-3 pt-2">
+              <Button
+                variant="outline"
+                className="flex-1 border-slate-800"
+                onClick={() => setShowConfirmModal(false)}
+              >
+                Review Answer
+              </Button>
+              <Button
+                className="flex-1 bg-gradient-primary"
+                onClick={() => {
+                  setShowConfirmModal(false);
+                  handleSubmit();
+                }}
+              >
+                Submit Final Answer
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

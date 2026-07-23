@@ -32,6 +32,7 @@ export function MilestoneCompletionCheck({
       return res;
     },
     refetchInterval: 3000, // poll every 3s
+    refetchIntervalInBackground: false,
     select: (res) => res.data,
   });
 

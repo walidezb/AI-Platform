@@ -15,7 +15,10 @@ import {
   BarChart2,
   FileCheck,
   X,
+  Unlock,
 } from 'lucide-react';
+import { toast } from 'sonner';
+import { apiPost } from '@/lib/api-client';
 import {
   ResponsiveContainer,
   BarChart,
@@ -141,6 +144,32 @@ export default function EmployeeDetailPage({
                     🔥 {progress?.streakDays}d streak
                   </span>
                 )}
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={async () => {
+                    const targetId = prompt('Enter Milestone or Module ID to unlock:');
+                    if (!targetId) return;
+                    const reason = prompt('Reason for unlocking:') || 'Admin override';
+                    try {
+                      await apiPost('/paths/admin/unlock', {
+                        userId: resolvedParams.employeeId,
+                        targetId,
+                        targetType: 'milestone',
+                        reason,
+                      });
+                      toast.success('Unlocked successfully!');
+                      window.location.reload();
+                    } catch {
+                      toast.error('Unlock failed. Ensure target ID is valid.');
+                    }
+                  }}
+                  className="bg-slate-950 border-slate-800 text-amber-400 hover:text-amber-300 text-xs"
+                >
+                  <Unlock className="h-3.5 w-3.5 mr-1.5" />
+                  Admin Unlock
+                </Button>
               </div>
             </div>
 

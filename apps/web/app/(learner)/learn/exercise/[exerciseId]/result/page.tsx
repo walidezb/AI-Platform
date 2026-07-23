@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
@@ -66,6 +66,49 @@ export default function ExerciseResultPage({
       fireSuccessConfetti();
     }
   }, [submission?.status]);
+
+  const [pollCount, setPollCount] = useState(0);
+  const [timedOut, setTimedOut] = useState(false);
+
+  useEffect(() => {
+    if (submission?.status === 'PENDING') {
+      const interval = setInterval(() => {
+        setPollCount((prev) => {
+          if (prev >= 60) {
+            setTimedOut(true);
+            clearInterval(interval);
+            return prev;
+          }
+          return prev + 1;
+        });
+      }, 5000);
+      return () => clearInterval(interval);
+    }
+  }, [submission?.status]);
+
+  if (timedOut) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4 py-12 text-center">
+        <div className="rounded-full bg-amber-500/10 p-4 border border-amber-500/20">
+          <RefreshCw className="h-8 w-8 text-amber-400" />
+        </div>
+        <h3 className="font-heading text-lg font-semibold">
+          Evaluation is taking longer than expected
+        </h3>
+        <p className="text-sm text-muted-foreground max-w-sm">
+          Your submission was saved. Refresh this page in a few minutes to see your results, or try submitting again.
+        </p>
+        <div className="flex gap-3 pt-2">
+          <Button variant="outline" onClick={() => window.location.reload()}>
+            Refresh Page
+          </Button>
+          <Button onClick={() => router.push(`/learn/exercise/${exerciseId}`)}>
+            Try Again
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   // ── PENDING STATE ──
   if (!submission || submission.status === 'PENDING') {

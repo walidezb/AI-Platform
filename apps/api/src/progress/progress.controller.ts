@@ -358,6 +358,18 @@ export class ProgressController {
     return { success: true, data: result };
   }
 
+  @Post('module/:moduleId/time-spent')
+  @Roles(UserRole.LEARNER, UserRole.MANAGER, UserRole.ORG_ADMIN)
+  async recordTimeSpent(
+    @Param('moduleId') moduleId: string,
+    @Body() body: { seconds?: number },
+    @CurrentUser() user: any,
+  ) {
+    const seconds = body?.seconds ?? 0;
+    await this.service.recordTimeSpent(user.id, moduleId, seconds);
+    return { success: true };
+  }
+
   @Get('me')
   @Roles(UserRole.LEARNER, UserRole.MANAGER, UserRole.ORG_ADMIN)
   async getMyProgress(@CurrentUser() user: any) {

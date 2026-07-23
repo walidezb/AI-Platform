@@ -80,6 +80,7 @@ export function useLearningPath(pathId: string) {
     },
     staleTime: 30_000,
     refetchInterval: 10_000, // poll every 10s
+    refetchIntervalInBackground: false,
     refetchOnWindowFocus: true,
     enabled: !!pathId,
     select: (res) => res.data,

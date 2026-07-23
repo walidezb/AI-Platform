@@ -1,8 +1,11 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@clerk/nextjs';
+import { toast } from 'sonner';
 import { createApiClient } from '@/lib/api-client';
+import { usePrevious } from '../usePrevious';
 
 export interface DashboardData {
   progress: {
@@ -87,10 +90,12 @@ export interface DashboardData {
   activityByDate?: Record<string, number>;
 }
 
+const STREAK_MILESTONES = [7, 14, 21, 30, 60, 100];
+
 export function useDashboard() {
   const { getToken } = useAuth();
 
-  return useQuery({
+  const query = useQuery({
     queryKey: ['learner-dashboard'],
     queryFn: async () => {
       const client = createApiClient(getToken);
@@ -101,9 +106,37 @@ export function useDashboard() {
     },
     staleTime: 30_000, // 30s cache
     refetchInterval: 60_000, // refresh every 60s
+    refetchIntervalInBackground: false,
     refetchOnWindowFocus: true, // re-fetch when tab is refocused
     select: (res) => res.data,
   });
+
+  const prevStreak = usePrevious(query.data?.progress?.streakDays);
+
+  useEffect(() => {
+    const current = query.data?.progress?.streakDays;
+    if (prevStreak === undefined || !current) return;
+
+    const crossed = STREAK_MILESTONES.find(
+      (m) => prevStreak < m && current >= m,
+    );
+
+    if (crossed) {
+      toast.success(`🔥 ${crossed}-Day Streak!`, {
+        description:
+          crossed === 7
+            ? 'One full week of learning — incredible!'
+            : crossed === 14
+              ? "Two weeks strong! You're unstoppable."
+              : crossed === 30
+                ? "30 days! You're a learning champion 🏆"
+                : `${crossed} days and counting — keep going!`,
+        duration: 6000,
+      });
+    }
+  }, [query.data?.progress?.streakDays, prevStreak]);
+
+  return query;
 }
 
 export interface ResumeData {

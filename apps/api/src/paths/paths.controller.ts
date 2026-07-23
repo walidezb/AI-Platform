@@ -25,6 +25,7 @@ import { UseGuards } from '@nestjs/common';
 import { UserRole } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { BudgetGuard } from '../usage/budget.guard';
+import { AdminUnlockDto } from './dto/admin-unlock.dto';
 
 @Controller()
 export class PathsController {
@@ -36,6 +37,15 @@ export class PathsController {
     private readonly queue: QueueService,
     private readonly prisma: PrismaService,
   ) {}
+
+  @Post('paths/admin/unlock')
+  @Roles(UserRole.PLATFORM_ADMIN, UserRole.ORG_ADMIN)
+  async adminUnlock(
+    @Body() dto: AdminUnlockDto,
+    @CurrentUser() admin: any,
+  ) {
+    return this.service.adminUnlock(dto, admin);
+  }
 
   @Post('internal/paths/save')
   @Public()

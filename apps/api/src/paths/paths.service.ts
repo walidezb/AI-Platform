@@ -9,6 +9,7 @@ import { GeneratedPathDto } from './dto/generated-path.dto';
 
 import { CacheService } from '../cache/cache.service';
 import { CacheKeys, CacheTTL } from '../cache/cache-keys';
+import { AdminUnlockDto } from './dto/admin-unlock.dto';
 
 @Injectable()
 export class PathsService {
@@ -223,5 +224,106 @@ export class PathsService {
       throw new ForbiddenException();
     }
     return path;
+  }
+
+  async getUnlockState(pathId: string, userId: string) {
+    const path = await this.prisma.learningPath.findUnique({
+      where: { id: pathId },
+      include: {
+        milestones: {
+          orderBy: { sequenceOrder: 'asc' },
+          include: {
+            modules: {
+              orderBy: { sequenceOrder: 'asc' },
+              select: {
+                id: true,
+                sequenceOrder: true,
+                isLocked: true,
+                resourceCompletions: {
+                  where: { userId },
+                  select: { id: true },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+    if (!path) throw new NotFoundException('Path not found');
+
+    return {
+      pathId,
+      milestones: path.milestones.map((m) => ({
+        id: m.id,
+        isLocked: m.isLocked,
+        modules: m.modules.map((mod) => ({
+          id: mod.id,
+          sequenceOrder: mod.sequenceOrder,
+          isLocked: mod.isLocked,
+          isComplete: mod.resourceCompletions.length > 0,
+        })),
+      })),
+    };
+  }
+
+  async adminUnlock(
+    dto: AdminUnlockDto,
+    admin: any,
+  ): Promise<{ success: boolean; unlockedId: string }> {
+    if (admin.role !== 'PLATFORM_ADMIN') {
+      const targetUser = await this.prisma.user.findUnique({
+        where: { id: dto.userId },
+        select: { organizationId: true },
+      });
+      if (targetUser?.organizationId !== admin.organizationId) {
+        throw new ForbiddenException(
+          'You can only unlock content for users in your organization',
+        );
+      }
+    }
+
+    switch (dto.targetType) {
+      case 'module': {
+        await this.prisma.module.update({
+          where: { id: dto.targetId },
+          data: { isLocked: false },
+        });
+        break;
+      }
+      case 'milestone': {
+        await this.prisma.$transaction(async (tx) => {
+          await tx.milestone.update({
+            where: { id: dto.targetId },
+            data: { isLocked: false },
+          });
+          const firstModule = await tx.module.findFirst({
+            where: { milestoneId: dto.targetId },
+            orderBy: { sequenceOrder: 'asc' },
+          });
+          if (firstModule) {
+            await tx.module.update({
+              where: { id: firstModule.id },
+              data: { isLocked: false },
+            });
+          }
+        });
+        break;
+      }
+      case 'exercise': {
+        await this.prisma.exercise.update({
+          where: { id: dto.targetId },
+          data: { isLocked: false },
+        });
+        break;
+      }
+    }
+
+    this.logger.warn(
+      `[AdminUnlock] ${admin.role} ${admin.id} manually unlocked ` +
+        `${dto.targetType}:${dto.targetId} for user:${dto.userId} ` +
+        `| reason: ${dto.reason ?? 'not specified'}`,
+    );
+
+    return { success: true, unlockedId: dto.targetId };
   }
 }

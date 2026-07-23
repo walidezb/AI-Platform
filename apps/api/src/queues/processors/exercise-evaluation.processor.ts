@@ -1,4 +1,4 @@
-import { Processor, Process } from '@nestjs/bull';
+import { Processor, Process, OnQueueFailed } from '@nestjs/bull';
 import * as Bull from 'bull';
 import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -81,7 +81,7 @@ export class ExerciseEvaluationProcessor {
             organizationId,
             milestoneId,
           }),
-          signal: AbortSignal.timeout(90_000), // 90s timeout
+          signal: AbortSignal.timeout(60_000), // 60s timeout
         },
       );
 
@@ -97,20 +97,41 @@ export class ExerciseEvaluationProcessor {
       );
     } catch (error) {
       this.logger.error(`Evaluation failed for ${submissionId}: ${error}`);
+      throw error; // BullMQ will retry or call @OnQueueFailed
+    }
+  }
 
-      // Mark submission as FAILED on error (don't leave it PENDING)
-      await this.prisma.exerciseSubmission.update({
-        where: { id: submissionId },
-        data: {
-          status: 'FAILED',
-          score: 0,
-          feedback:
-            'Evaluation failed due to a technical error. ' +
-            'Please try submitting again.',
-        },
-      });
+  @OnQueueFailed()
+  async onFailed(job: Bull.Job, error: Error) {
+    this.logger.error(
+      `[ExerciseEval] Job ${job.id} failed: ${error.message}`,
+    );
 
-      throw error; // BullMQ will retry
+    const isTimeout =
+      error.message.toLowerCase().includes('timeout') ||
+      error.message.toLowerCase().includes('timed out') ||
+      error.message.toLowerCase().includes('etimedout');
+
+    const feedback = isTimeout
+      ? 'Evaluation timed out. Your response was saved — please try submitting again.'
+      : 'An error occurred during evaluation. Please try again.';
+
+    try {
+      if (job.data?.submissionId) {
+        await this.prisma.exerciseSubmission.update({
+          where: { id: job.data.submissionId },
+          data: {
+            status: 'FAILED',
+            feedback,
+            evaluatedAt: new Date(),
+          },
+        });
+      }
+    } catch (dbErr) {
+      this.logger.error(
+        `[ExerciseEval] Could not mark submission as failed`,
+        dbErr,
+      );
     }
   }
 }

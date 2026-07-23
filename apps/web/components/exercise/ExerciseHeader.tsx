@@ -1,4 +1,6 @@
-import React from 'react';
+'use client';
+
+import React, { useState, useEffect } from 'react';
 import { Briefcase, Clock, HelpCircle, PenTool } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
@@ -18,6 +20,21 @@ export function ExerciseHeader({
   attemptsUsed,
   attemptsRemaining,
 }: ExerciseHeaderProps) {
+  const [elapsed, setElapsed] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setElapsed((prev) => prev + 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const formatElapsed = (seconds: number): string => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  };
+
   const TYPE_CONFIG: Record<
     string,
     { label: string; icon: React.ReactNode; color: string; bg: string }
@@ -72,6 +89,11 @@ export function ExerciseHeader({
             ✅ Passed
           </Badge>
         )}
+
+        <div className="flex items-center gap-1.5 font-mono text-xs text-muted-foreground bg-muted/60 border border-border/50 rounded px-2.5 py-1 ml-auto">
+          <Clock className="h-3 w-3 text-indigo-400" />
+          {formatElapsed(elapsed)}
+        </div>
       </div>
 
       <h1 className="font-heading text-2xl font-bold">{exercise.title}</h1>

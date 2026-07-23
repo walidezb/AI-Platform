@@ -25,6 +25,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { StatsCard } from '@/components/ui/StatsCard';
 import { ProgressBar } from '@/components/ui/ProgressBar';
 import { StatusBadge } from '@/components/ui/StatusBadge';
+import { ResumeButton } from '@/components/learn/ResumeButton';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -152,6 +153,15 @@ export default function LearnerDashboardPage() {
           subValue="total path length"
         />
       </div>
+
+      {/* ── RESUME BUTTON ── */}
+      {resume?.redirectUrl && (
+        <ResumeButton
+          redirectUrl={resume.redirectUrl}
+          moduleTitle={resume.currentModule?.title}
+          moduleType={resume.currentModule?.moduleType}
+        />
+      )}
 
       {/* ── SECTION C: CONTINUE LEARNING (main CTA) ── */}
       {nextModule && currentMilestone && (

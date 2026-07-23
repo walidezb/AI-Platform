@@ -2,6 +2,7 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CacheService } from '../cache/cache.service';
 import { CacheKeys, CacheTTL } from '../cache/cache-keys';
+import { calculateStreakAction } from '../common/utils/streak.utils';
 
 @Injectable()
 export class ProgressService {
@@ -442,45 +443,30 @@ export class ProgressService {
   // ── STREAK TRACKING ───────────────────────────────────
 
   private async updateStreak(userId: string) {
-    const progress = await this.prisma.userProgress.findUnique({
-      where: { userId },
-      select: { lastActivityAt: true, streakDays: true },
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        organization: { select: { timezone: true } },
+        progress: { select: { lastActivityAt: true, streakDays: true } },
+      },
     });
-    if (!progress) return;
+    if (!user) return;
 
-    const now = new Date();
-    const lastActive = progress.lastActivityAt;
-    if (!lastActive) {
-      await this.prisma.userProgress.updateMany({
-        where: { userId },
-        data: { streakDays: 1 },
-      });
-      return;
-    }
+    const timezone = user.organization?.timezone ?? 'UTC';
+    const lastActive = user.progress?.lastActivityAt ?? null;
+    const action = calculateStreakAction(lastActive, new Date(), timezone);
 
-    const todayStart = new Date(now);
-    todayStart.setHours(0, 0, 0, 0);
-    const yesterdayStart = new Date(todayStart);
-    yesterdayStart.setDate(yesterdayStart.getDate() - 1);
+    if (action === 'keep') return;
 
-    // Already active today → no change
-    if (lastActive >= todayStart) return;
-
-    // Active yesterday → increment streak
-    if (lastActive >= yesterdayStart) {
-      await this.prisma.userProgress.updateMany({
-        where: { userId },
-        data: { streakDays: { increment: 1 } },
-      });
-      return;
-    }
-
-    // More than 1 day gap → reset streak
     await this.prisma.userProgress.updateMany({
       where: { userId },
-      data: { streakDays: 1 },
+      data: {
+        streakDays: action === 'increment' ? { increment: 1 } : 1,
+      },
     });
-    this.logger.log(`Streak reset for user ${userId}`);
+    if (action === 'reset' && lastActive) {
+      this.logger.log(`Streak reset for user ${userId}`);
+    }
   }
 
   // ── GET MODULE PROGRESS ───────────────────────────────
@@ -837,5 +823,21 @@ export class ProgressService {
         `Reconciled progress for ${userId}: module → ${targetModuleId}`,
       );
     }
+  }
+
+  async recordTimeSpent(userId: string, moduleId: string, seconds: number) {
+    if (!seconds || seconds < 0 || seconds > 86400) return;
+
+    const timeSpentMinutes = Math.max(1, Math.round(seconds / 60));
+    await this.prisma.userProgress.updateMany({
+      where: { userId },
+      data: {
+        timeSpentMinutes: { increment: timeSpentMinutes },
+        lastActivityAt: new Date(),
+      },
+    });
+    this.logger.debug(
+      `[Progress] User ${userId} spent ${seconds}s on module ${moduleId}`,
+    );
   }
 }

@@ -17,6 +17,7 @@ export function NotificationBell() {
     queryKey: ['notification-count'],
     queryFn: () => apiClient.get('/notifications/unread-count'),
     refetchInterval: 30000, // poll every 30s
+    refetchIntervalInBackground: false,
   });
 
   const unreadCount = countData?.data?.count || 0;

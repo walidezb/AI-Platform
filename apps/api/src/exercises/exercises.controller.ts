@@ -228,15 +228,27 @@ export class ExercisesController {
 
   // ── GET SUBMISSION STATUS ──────────────────────────────
   @Get('submissions/:submissionId')
-  @Roles(UserRole.LEARNER)
+  @Roles(UserRole.LEARNER, UserRole.MANAGER, UserRole.ORG_ADMIN)
   async getSubmission(
     @Param('submissionId') submissionId: string,
     @CurrentUser() user: any,
   ) {
-    const submission = await this.prisma.exerciseSubmission.findFirst({
-      where: { id: submissionId, userId: user.id },
+    const submission = await this.prisma.exerciseSubmission.findUnique({
+      where: { id: submissionId },
+      include: {
+        exercise: {
+          select: {
+            passingScore: true,
+            exerciseType: true,
+            expectedOutput: true,
+          },
+        },
+      },
     });
     if (!submission) throw new NotFoundException('Submission not found');
+    if (user.role === UserRole.LEARNER && submission.userId !== user.id) {
+      throw new ForbiddenException("Cannot view another user's submission");
+    }
     return { success: true, data: submission };
   }
 

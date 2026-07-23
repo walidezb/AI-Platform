@@ -5,24 +5,39 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Unlock } from 'lucide-react';
 
 type Props = {
-  isLocked: boolean;
+  isLocked?: boolean;
+  isJustUnlocked?: boolean;
   children: ReactNode;
   onUnlock?: () => void;
 };
 
-export function UnlockAnimation({ isLocked, children, onUnlock }: Props) {
+export function UnlockAnimation({
+  isLocked = false,
+  isJustUnlocked = false,
+  children,
+  onUnlock,
+}: Props) {
   const [wasLocked, setWasLocked] = useState(isLocked);
-  const [isAnimating, setAnimating] = useState(false);
+  const [isAnimating, setAnimating] = useState(isJustUnlocked);
 
   useEffect(() => {
-    // Detect transition from locked → unlocked
+    if (isJustUnlocked) {
+      setAnimating(true);
+      onUnlock?.();
+      const timer = setTimeout(() => setAnimating(false), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [isJustUnlocked, onUnlock]);
+
+  useEffect(() => {
     if (wasLocked && !isLocked) {
       setAnimating(true);
       onUnlock?.();
-      setTimeout(() => {
+      const timer = setTimeout(() => {
         setAnimating(false);
         setWasLocked(false);
       }, 800);
+      return () => clearTimeout(timer);
     } else {
       setWasLocked(isLocked);
     }
@@ -30,15 +45,14 @@ export function UnlockAnimation({ isLocked, children, onUnlock }: Props) {
 
   return (
     <div className="relative">
-      {/* Unlock flash overlay */}
       <AnimatePresence>
-        {isAnimating && (
+        {(isAnimating || isJustUnlocked) && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: [0, 0.6, 0] }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.8, times: [0, 0.3, 1] }}
-            className="absolute inset-0 z-10 rounded-xl bg-primary/20 pointer-events-none"
+            className="absolute inset-0 z-10 rounded-xl bg-indigo-500/20 border border-indigo-500/50 pointer-events-none"
           />
         )}
       </AnimatePresence>
@@ -46,30 +60,13 @@ export function UnlockAnimation({ isLocked, children, onUnlock }: Props) {
       <motion.div
         animate={{
           opacity: isLocked ? 0.5 : 1,
-          scale: isAnimating ? [1, 1.02, 1] : 1,
+          scale: isAnimating || isJustUnlocked ? [1, 1.02, 1] : 1,
           filter: isLocked ? 'grayscale(30%)' : 'grayscale(0%)',
         }}
         transition={{ duration: 0.4 }}
       >
         {children}
       </motion.div>
-
-      {/* Spinning lock icon that disappears on unlock */}
-      <AnimatePresence>
-        {isAnimating && (
-          <motion.div
-            initial={{ opacity: 1, scale: 1, rotate: 0 }}
-            animate={{ opacity: 0, scale: 0, rotate: 180 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.6 }}
-            className="absolute top-4 right-4 z-20"
-          >
-            <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center">
-              <Unlock className="h-4 w-4 text-primary" />
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }
