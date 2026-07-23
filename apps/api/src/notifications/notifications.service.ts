@@ -36,9 +36,22 @@ export class NotificationsService {
     return this.config.get<string>('APP_URL') || 'http://localhost:3000';
   }
 
+  private async canSendEmail(userId: string): Promise<boolean> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { emailNotifications: true },
+    });
+    return user?.emailNotifications ?? true;
+  }
+
   // ── EMAIL SENDERS ──────────────────────────────────────
 
   async sendPathReadyEmail(userId: string) {
+    if (!(await this.canSendEmail(userId))) {
+      this.logger.log(`[Email] Skipping path-ready email for ${userId} (unsubscribed)`);
+      return;
+    }
+
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       include: {

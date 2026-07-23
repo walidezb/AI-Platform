@@ -36,6 +36,16 @@ export function validateResourceUrl(url: string): void {
   }
 }
 
+/**
+ * ResourcesService — manages Resource metadata (CRUD, ordering)
+ *
+ * NOTE: Resource COMPLETION tracking is handled by ProgressService:
+ *   ProgressService.markResourceComplete(userId, resourceId)
+ *   → POST /progress/resource/complete
+ *
+ * markResourceViewed: records that the user OPENED the resource (for analytics).
+ * For marking a resource as COMPLETE (triggers unlock logic), use ProgressService.
+ */
 @Injectable()
 export class ResourcesService {
   constructor(private prisma: PrismaService) {}

@@ -50,6 +50,7 @@
     "jsonwebtoken": "^9.0.3",
     "jwks-rsa": "^4.1.0",
     "nest-winston": "^1.10.2",
+    "posthog-node": "^5.41.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
     "stripe": "^22.3.2",

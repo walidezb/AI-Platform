@@ -11,7 +11,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { ProgressService } from '../progress/progress.service';
 import { Public } from './decorators/public.decorator';
 import { CurrentUser } from './decorators/current-user.decorator';
-import { hashToken } from '../common/utils/token.utils';
+import { hashToken, generateUnsubscribeToken } from '../common/utils/token.utils';
 
 import { AuthThrottle } from './throttle.config';
 import { createClerkClient } from '@clerk/backend';
@@ -168,6 +168,7 @@ export class AuthController {
         role: user.role,
         avatarUrl: user.avatarUrl,
         preferredLanguage: user.preferredLanguage,
+        unsubscribeToken: user?.id ? generateUnsubscribeToken(user.id) : null,
         onboardingToken: user.onboardingToken,
         organization: user.organization
           ? {

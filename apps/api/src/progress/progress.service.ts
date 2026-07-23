@@ -35,6 +35,11 @@ export class ProgressService {
 
   // ── MAIN ENTRY POINT ───────────────────────────────────
 
+  /**
+   * markResourceComplete: marks a resource as fully consumed.
+   * Triggers: module completion check → exercise unlock → milestone unlock.
+   * This is the authoritative completion endpoint — use this, not markResourceViewed.
+   */
   async markResourceComplete(
     userId: string,
     resourceId: string,

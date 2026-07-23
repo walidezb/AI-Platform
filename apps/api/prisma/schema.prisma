@@ -38,6 +38,7 @@ enum AssessmentStatus {
   IN_PROGRESS
   COMPLETED
   ABANDONED
+  FAILED
 }
 
 enum ExperienceLevel {
@@ -128,6 +129,8 @@ enum NotificationType {
   STALLED_ALERT
   PAYMENT_SUCCESS
   PAYMENT_FAILED
+  PATH_GENERATION_FAILED
+  ADMIN_ALERT
   SYSTEM
 }
 
@@ -253,6 +256,7 @@ model User {
   inviteStatus          InviteStatus     @default(PENDING)
   lastActiveAt          DateTime?
   deletedAt             DateTime?
+  emailNotifications    Boolean          @default(true)
   createdAt             DateTime         @default(now())
   updatedAt             DateTime         @updatedAt
 

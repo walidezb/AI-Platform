@@ -14,7 +14,7 @@ import { ResourceCurationPayload } from '../queue.types';
 export class ResourceCurationProcessor {
   private readonly logger = new Logger(ResourceCurationProcessor.name);
 
-  @Process(JOB_NAMES.CURATE_MODULE_RESOURCES)
+  @Process({ name: JOB_NAMES.CURATE_MODULE_RESOURCES, concurrency: 2 })
   async handleResourceCuration(job: Bull.Job<ResourceCurationPayload>) {
     this.logger.log(`Curating resources for module: ${job.data.moduleId}`);
     // TODO Phase 3: curate resources using AI

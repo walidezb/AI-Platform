@@ -45,6 +45,9 @@ class GoogleSearchService:
     if not self._enabled:
       return []
 
+    import asyncio
+    await asyncio.sleep(0.5)  # Rate limit throttle: max 2 requests/sec
+
     # Build search query
     type_modifiers = {
       "VIDEO":         "tutorial video site:youtube.com",

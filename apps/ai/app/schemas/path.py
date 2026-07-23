@@ -117,6 +117,7 @@ class PathGenerationRequest(BaseModel):
     organizationId: str
     skillProfile: Dict
     roleRequirements: Optional[Dict] = None
+    orgContext: Optional[str] = ""
 
 class PathSaveRequest(BaseModel):
     assessmentId: str

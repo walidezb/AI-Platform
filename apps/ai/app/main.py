@@ -43,6 +43,25 @@ app.include_router(search.router)
 app.include_router(exercise.router)
 app.include_router(evaluation.router)
 
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from app.tasks.cleanup import cleanup_deleted_resources
+
+scheduler = AsyncIOScheduler(timezone="UTC")
+
 @app.on_event("startup")
 async def startup():
     logging.getLogger(__name__).info("AI Service started successfully")
+    try:
+        scheduler.add_job(
+            cleanup_deleted_resources,
+            trigger="cron",
+            hour=3,
+            minute=0,
+            id="vector_cleanup",
+            misfire_grace_time=3600,
+            coalesce=True,
+            max_instances=1,
+        )
+        scheduler.start()
+    except Exception as e:
+        logging.getLogger(__name__).warning(f"Scheduler setup skipped or failed: {e}")

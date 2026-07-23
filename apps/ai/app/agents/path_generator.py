@@ -117,7 +117,12 @@ class PathGeneratorAgent:
         )
         self._last_usage = None
 
-    def _build_prompt(self, skill_profile: Dict, role_requirements: Optional[Dict]) -> str:
+    def _build_prompt(
+        self,
+        skill_profile: Dict,
+        role_requirements: Optional[Dict],
+        org_context: str = "",
+    ) -> str:
         role = skill_profile.get('identified_role', 'Professional')
         level = skill_profile.get('experience_level', 'INTERMEDIATE')
         strong = ', '.join(skill_profile.get('strong_areas', []))
@@ -133,6 +138,8 @@ class PathGeneratorAgent:
             focus = ', '.join(role_requirements.get('focusAreas', []))
             role_context = f"\nCOMPANY ROLE REQUIREMENTS:\n- Focus areas: {focus}"
 
+        org_block = f"\nORGANIZATION CONTEXT: {org_context}" if org_context else ""
+
         return f"""Create a comprehensive learning path for this employee:
 
 EMPLOYEE PROFILE:
@@ -147,6 +154,7 @@ EMPLOYEE PROFILE:
 - Preferred Duration: {duration} weeks
 - Learning Preference: {prefs}
 {role_context}
+{org_block}
 
 INSTRUCTIONS:
 1. Design a path that DIRECTLY addresses their weak areas
@@ -267,9 +275,14 @@ Generate the complete learning path JSON now:"""
         self,
         skill_profile: Dict,
         role_requirements: Optional[Dict] = None,
+        org_context: str = "",
         include_exercises: bool = True,
     ) -> Optional[GeneratedPath]:
-        prompt = self._build_prompt(skill_profile, role_requirements)
+        """Generate a complete learning path using LLM."""
+        if not self._enabled:
+            return self._generate_mock_path(skill_profile)
+
+        prompt = self._build_prompt(skill_profile, role_requirements, org_context)
 
         sys_prompt = PATH_GENERATION_SYSTEM_PROMPT
         if not include_exercises:

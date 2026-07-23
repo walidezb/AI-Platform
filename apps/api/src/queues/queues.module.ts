@@ -13,6 +13,8 @@ import { AlertsModule } from '../alerts/alerts.module';
 import { BillingModule } from '../billing/billing.module';
 import { PrismaModule } from '../prisma/prisma.module';
 
+import { PostHogService } from '../common/posthog.service';
+
 @Module({
   imports: [
     BullModule.registerQueue(
@@ -31,6 +33,7 @@ import { PrismaModule } from '../prisma/prisma.module';
   ],
   providers: [
     QueueService,
+    PostHogService,
     AssessmentProcessor,
     PathGenerationProcessor,
     ResourceCurationProcessor,
@@ -38,6 +41,6 @@ import { PrismaModule } from '../prisma/prisma.module';
     ExerciseEvaluationProcessor,
     NotificationProcessor,
   ],
-  exports: [QueueService, BullModule],
+  exports: [QueueService, PostHogService, BullModule],
 })
 export class QueuesModule {}

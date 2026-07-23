@@ -39,6 +39,7 @@ async def generate_path(
     path = await agent.generate(
         skill_profile=request.skillProfile,
         role_requirements=request.roleRequirements,
+        org_context=request.orgContext or "",
         include_exercises=False,
     )
 

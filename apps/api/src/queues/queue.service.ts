@@ -96,9 +96,14 @@ export class QueueService {
   }
 
   // One job per module (runs in parallel after path is created)
-  async addResourceCurationJob(payload: ResourceCurationPayload) {
+  async addResourceCurationJob(
+    payload: ResourceCurationPayload,
+    opts?: { priority?: number },
+  ) {
     return this.resourceQueue.add(JOB_NAMES.CURATE_MODULE_RESOURCES, payload, {
       attempts: 3,
+      backoff: { type: 'exponential', delay: 5000 },
+      priority: opts?.priority ?? 10,
       timeout: 120000, // 2 minute timeout per module
     });
   }

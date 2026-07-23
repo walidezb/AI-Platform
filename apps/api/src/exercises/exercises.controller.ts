@@ -145,8 +145,13 @@ export class ExercisesController {
       where: { userId: user.id, exerciseId },
     });
     if (attemptsUsed >= exercise.maxAttempts) {
-      throw new BadRequestException('Maximum attempts reached');
+      throw new ForbiddenException(
+        `You have reached the maximum of ${exercise.maxAttempts} attempts for this exercise. Contact your manager for assistance.`,
+      );
     }
+
+    const attemptNumber = attemptsUsed + 1;
+    const attemptsRemaining = Math.max(0, exercise.maxAttempts - attemptNumber);
 
     // Create submission record
     const submission = await this.prisma.exerciseSubmission.create({
@@ -154,7 +159,7 @@ export class ExercisesController {
         userId: user.id,
         exerciseId,
         submissionText: body.submissionText,
-        attemptNumber: attemptsUsed + 1,
+        attemptNumber,
         status: 'PENDING',
       },
     });
@@ -190,6 +195,9 @@ export class ExercisesController {
           score: result.score,
           feedback: result.feedback,
           correctAnswers: result.correctAnswers,
+          attemptNumber,
+          attemptsRemaining,
+          maxAttempts: exercise.maxAttempts,
           instant: true,
         },
       };
@@ -208,6 +216,9 @@ export class ExercisesController {
       data: {
         submissionId: submission.id,
         status: 'PENDING',
+        attemptNumber,
+        attemptsRemaining,
+        maxAttempts: exercise.maxAttempts,
         instant: false,
         message:
           'Your submission is being evaluated by AI. Results are usually ready in under 30 seconds.',
