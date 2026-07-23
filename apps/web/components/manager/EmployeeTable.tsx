@@ -14,6 +14,7 @@ import {
   Users,
   AlertTriangle,
   ArrowUpDown,
+  Clock,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -244,8 +245,8 @@ export function EmployeeTable({
         </div>
       )}
 
-      {/* Table */}
-      <div className="rounded-xl border border-slate-800 overflow-hidden bg-slate-900/40">
+      {/* Desktop: Table */}
+      <div className="hidden md:block rounded-xl border border-slate-800 overflow-hidden bg-slate-900/40">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((hg) => (
@@ -288,6 +289,87 @@ export function EmployeeTable({
             )}
           </TableBody>
         </Table>
+      </div>
+
+      {/* Mobile: Card List */}
+      <div className="md:hidden space-y-3">
+        {displayRows.length === 0 ? (
+          <div className="p-8 text-center text-slate-500 rounded-xl border border-slate-800 bg-slate-900/40">
+            <Users className="h-8 w-8 text-slate-600 mx-auto mb-2" />
+            <p className="text-sm font-medium text-slate-300">No employees found</p>
+            <p className="text-xs text-slate-500 mt-1">Try a different search or filter</p>
+          </div>
+        ) : (
+          displayRows.map((emp) => {
+            const key = emp.isStalled ? 'STALLED' : emp.status;
+            const cfg = STATUS_CONFIG[key as keyof typeof STATUS_CONFIG] || STATUS_CONFIG.NOT_STARTED;
+
+            return (
+              <div
+                key={emp.id}
+                onClick={() => onViewEmployee?.(emp.id)}
+                className="p-4 rounded-xl border border-slate-800 bg-slate-900/60 cursor-pointer hover:border-indigo-500/30 active:scale-[0.99] transition-all"
+              >
+                <div className="flex items-center gap-3 mb-3">
+                  <Avatar className="h-10 w-10 shrink-0">
+                    <AvatarImage src={emp.avatarUrl ?? undefined} />
+                    <AvatarFallback className="text-xs bg-indigo-500/20 text-indigo-300 font-bold">
+                      {emp.fullName.slice(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold truncate text-slate-200">
+                      {emp.fullName}
+                    </p>
+                    <p className="text-xs text-slate-400 truncate">
+                      {emp.department ?? 'No Dept'} · {emp.jobTitle ?? 'Employee'}
+                    </p>
+                  </div>
+                  {/* Status badge */}
+                  <span className={cn('inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium shrink-0', cfg.color)}>
+                    {emp.isStalled && <AlertTriangle className="h-3 w-3 mr-1" />}
+                    {cfg.label}
+                  </span>
+                </div>
+
+                {/* Progress bar */}
+                {(emp.currentMilestone || emp.completionPct !== undefined) && (
+                  <div className="mb-3">
+                    <div className="flex items-center justify-between text-xs text-slate-400 mb-1.5">
+                      <span className="truncate max-w-[60%]">{emp.currentMilestone ?? 'Learning Path'}</span>
+                      <span className="font-medium text-slate-200">
+                        {Math.round(emp.completionPct)}%
+                      </span>
+                    </div>
+                    <div className="h-1.5 rounded-full bg-slate-800 overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-violet-500"
+                        style={{ width: `${emp.completionPct}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Stats row */}
+                <div className="flex items-center gap-4 text-xs text-slate-400 pt-2 border-t border-slate-800/60">
+                  <span className="flex items-center gap-1">
+                    🔥 {emp.streakDays}d streak
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Clock className="h-3 w-3" />
+                    {emp.lastActivityAt
+                      ? formatRelativeTime(emp.lastActivityAt)
+                      : 'Never'
+                    }
+                  </span>
+                  <span className="ms-auto text-indigo-400 text-xs font-medium">
+                    View →
+                  </span>
+                </div>
+              </div>
+            );
+          })
+        )}
       </div>
 
       {/* Pagination */}

@@ -55,11 +55,11 @@ interface SidebarProps {
   };
 }
 
-export function Sidebar({ items, org, user }: SidebarProps) {
+export function SidebarContent({ items, org, user, onItemClick }: SidebarProps & { onItemClick?: () => void }) {
   const pathname = usePathname();
 
   return (
-    <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 border-r border-border bg-card flex-col md:flex">
+    <>
       {/* Sidebar header (top, above nav) */}
       <div className="flex h-16 items-center gap-3 px-4 py-3 border-b border-border">
         {org.logoUrl ? (
@@ -92,10 +92,12 @@ export function Sidebar({ items, org, user }: SidebarProps) {
             <Link
               key={item.href}
               href={item.href}
+              prefetch={true}
+              onClick={onItemClick}
               className={cn(
                 "group flex items-center justify-between px-3.5 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 select-none relative",
                 isActive
-                  ? "bg-primary/10 text-primary shadow-glow-sm border-l-2 border-primary"
+                  ? "bg-primary/10 text-primary shadow-glow-sm border-s-2 border-primary"
                   : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
               )}
             >
@@ -134,6 +136,14 @@ export function Sidebar({ items, org, user }: SidebarProps) {
           </div>
         </div>
       </div>
+    </>
+  );
+}
+
+export function Sidebar(props: SidebarProps) {
+  return (
+    <aside className="fixed inset-y-0 start-0 z-40 hidden w-64 border-e border-border bg-card flex-col lg:flex">
+      <SidebarContent {...props} />
     </aside>
   );
 }

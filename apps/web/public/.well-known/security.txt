@@ -1,0 +1,8 @@
+Contact: mailto:security@yourplatform.com
+Preferred-Languages: en, ar
+Scope: https://yourplatform.com
+Policy: https://yourplatform.com/security-policy
+Acknowledgments: https://yourplatform.com/security/hall-of-fame
+Hiring: https://yourplatform.com/careers
+Encryption: https://yourplatform.com/pgp-key.txt
+Expires: 2027-07-23T00:00:00.000Z

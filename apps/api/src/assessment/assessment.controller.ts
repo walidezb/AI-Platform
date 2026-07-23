@@ -159,7 +159,11 @@ export class AssessmentController {
     const aiUrl = `${aiServiceUrl}/assessment/${id}/message/stream`;
     const aiResponse = await fetch(aiUrl, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Internal-Secret':
+          this.config.get('INTERNAL_SERVICE_SECRET') ?? '',
+      },
       body: JSON.stringify({ userMessage: body.userMessage }),
     });
 

@@ -12,6 +12,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import type { Request } from 'express';
 import { BillingService } from './billing.service';
+import { SkipThrottle } from '@nestjs/throttler';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { User } from '@prisma/client';
@@ -95,6 +96,7 @@ export class BillingController {
 
   /* Stripe webhook — NO AUTH, raw body, verify signature */
   @Post('webhook')
+  @SkipThrottle()
   @HttpCode(200)
   /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
   async webhook(@Headers('stripe-signature') sig: string, @Req() req: any) {

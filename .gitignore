@@ -18,6 +18,9 @@ build/
 .env.production.local
 *.env
 !.env.example
+tests/.auth/
+playwright-report/
+test-results/
 
 # Python
 __pycache__/

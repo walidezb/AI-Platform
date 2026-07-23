@@ -5,10 +5,13 @@ import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@clerk/nextjs';
 import { UserPlus } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { LoadingSkeleton } from '@/components/ui/LoadingSkeleton';
+import { SkeletonEmployeeTable } from '@/components/skeletons';
+import { ApiErrorState } from '@/components/ApiErrorState';
+import { useApiError } from '@/hooks/useApiError';
 import { EmployeeTable } from '@/components/manager/EmployeeTable';
 import { FilterToolbar } from '@/components/manager/FilterToolbar';
 import { useTeamOverview } from '@/hooks/manager/useTeamOverview';
@@ -18,10 +21,12 @@ import { createApiClient } from '@/lib/api-client';
 type Dept = { id: string; name: string };
 
 export default function TeamPage() {
+  const t = useTranslations('manager');
   const router = useRouter();
   const { getToken } = useAuth();
   const { filters, setFilters } = useTeamFilters();
-  const { data, isLoading } = useTeamOverview(filters);
+  const { data, isLoading, isError, error, refetch } = useTeamOverview(filters);
+  const { status, message } = useApiError(error);
 
   // Fetch departments for filter dropdown
   const { data: departments } = useQuery({
@@ -49,7 +54,7 @@ export default function TeamPage() {
   return (
     <div className="p-6 space-y-5">
       <PageHeader
-        title="My Team"
+        title={t('teamOverview')}
         subtitle={
           pagination
             ? `${pagination.total} of ${stats?.total ?? 0} employees`
@@ -60,8 +65,8 @@ export default function TeamPage() {
             onClick={() => router.push('/manage/invitations')}
             className="bg-gradient-primary border-0 text-white font-semibold"
           >
-            <UserPlus className="h-4 w-4 mr-2" />
-            Invite Employee
+            <UserPlus className="h-4 w-4 me-2" />
+            {t('inviteEmployee')}
           </Button>
         }
       />
@@ -77,9 +82,11 @@ export default function TeamPage() {
           onChange={setFilters}
         />
 
-        {/* Table */}
-        {isLoading ? (
-          <LoadingSkeleton className="h-64" />
+        {/* Table / Skeleton / Error */}
+        {isError ? (
+          <ApiErrorState status={status} message={message} onRetry={refetch} />
+        ) : isLoading ? (
+          <SkeletonEmployeeTable />
         ) : (
           <EmployeeTable
             employees={employees}

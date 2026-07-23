@@ -3,8 +3,10 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Briefcase, Building2, Sparkles, Clock } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { OnboardingSteps } from './OnboardingSteps';
 import { BeginButton } from './BeginButton';
+import { LanguageSwitcher } from '../LanguageSwitcher';
 
 interface WelcomeContentProps {
   token: string;
@@ -41,6 +43,7 @@ export function WelcomeContent({
   orgLogo,
   isReturning,
 }: WelcomeContentProps) {
+  const t = useTranslations('onboarding');
   const firstName = employeeName.split(' ')[0] || 'Learner';
   const initials = employeeName
     .split(' ')
@@ -56,6 +59,11 @@ export function WelcomeContent({
       animate="visible"
       className="w-full max-w-lg mx-auto flex flex-col justify-center items-stretch py-12 px-4 sm:px-0 text-white min-h-screen relative z-10"
     >
+      {/* Language Switcher Top */}
+      <motion.div variants={itemVariants} className="flex justify-end mb-4">
+        <LanguageSwitcher />
+      </motion.div>
+
       {/* 1. Step Indicator */}
       <motion.div variants={itemVariants} className="w-full">
         <OnboardingSteps currentStep={1} />
@@ -183,7 +191,7 @@ export function WelcomeContent({
         className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground mb-6 font-medium select-none"
       >
         <Clock className="h-3.5 w-3.5 text-primary shrink-0" />
-        <span>Estimated time: ~10 minutes</span>
+        <span>{t('estimatedTime')}</span>
       </motion.div>
 
       {/* 7. Action CTA Button */}

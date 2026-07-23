@@ -5,6 +5,10 @@ import { serverFetch } from '@/lib/api-server';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { LearnerProgressSyncWrapper } from '@/components/learner/LearnerProgressSyncWrapper';
 import { BudgetExceededBanner } from '@/components/BudgetExceededBanner';
+import { MobileBottomNav } from '@/components/learner/MobileBottomNav';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
+
+import { getTranslations } from 'next-intl/server';
 
 interface User {
   id: string;
@@ -47,19 +51,21 @@ export default async function LearnerLayout({
     redirect('/manage/dashboard');
   }
 
+  const tNav = await getTranslations('nav');
+
   const navItems = [
     {
-      label: 'Dashboard',
+      label: tNav('dashboard'),
       href: '/learn/dashboard',
       icon: 'LayoutDashboard' as const,
     },
     {
-      label: 'My Path',
+      label: tNav('myPath'),
       href: `/learn/path/${user?.activePath?.id || ''}`,
       icon: 'Map' as const,
     },
     {
-      label: 'Settings',
+      label: tNav('settings'),
       href: '/learn/settings',
       icon: 'Settings' as const,
     },
@@ -80,8 +86,13 @@ export default async function LearnerLayout({
         }
         user={user || { fullName: 'Learner', role: 'LEARNER' }}
       >
-        <BudgetExceededBanner />
-        {children}
+        <div className="pb-20 md:pb-0">
+          <BudgetExceededBanner />
+          <ErrorBoundary>
+            {children}
+          </ErrorBoundary>
+        </div>
+        <MobileBottomNav />
       </DashboardLayout>
     </LearnerProgressSyncWrapper>
   );

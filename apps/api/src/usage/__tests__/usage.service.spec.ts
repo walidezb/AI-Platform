@@ -5,11 +5,21 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { EmailService } from '../../email/email.service';
 import { NotificationsService } from '../../notifications/notifications.service';
 
+import { CacheService } from '../../cache/cache.service';
+
 describe('UsageService', () => {
   let service: UsageService;
   let prisma: jest.Mocked<any>;
   let email: jest.Mocked<any>;
   let notifs: jest.Mocked<any>;
+
+  const mockCacheService = {
+    get: jest.fn().mockResolvedValue(null),
+    set: jest.fn().mockResolvedValue(undefined),
+    del: jest.fn().mockResolvedValue(undefined),
+    delPattern: jest.fn().mockResolvedValue(undefined),
+    getOrSet: jest.fn((key, ttl, fetcher) => fetcher()),
+  };
 
   beforeEach(async () => {
     prisma = {
@@ -47,6 +57,7 @@ describe('UsageService', () => {
         { provide: PrismaService, useValue: prisma },
         { provide: EmailService, useValue: email },
         { provide: NotificationsService, useValue: notifs },
+        { provide: CacheService, useValue: mockCacheService },
         {
           provide: ConfigService,
           useValue: { get: jest.fn().mockReturnValue('http://localhost:3000') },

@@ -17,6 +17,10 @@ app = FastAPI(
     docs_url="/docs" if settings.ENVIRONMENT == "development" else None,
 )
 
+from app.middleware.auth import verify_internal_secret
+
+app.middleware('http')(verify_internal_secret)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[

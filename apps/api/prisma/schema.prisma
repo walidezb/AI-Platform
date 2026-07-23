@@ -266,6 +266,7 @@ model User {
   @@index([organizationId])
   @@index([clerkId])
   @@index([onboardingToken])
+  @@index([role])
 }
 
 model Assessment {
@@ -316,6 +317,7 @@ model LearningPath {
 
   @@index([userId])
   @@index([organizationId])
+  @@index([status])
 }
 
 model Milestone {
@@ -398,6 +400,8 @@ model ResourceCompletion {
   @@unique([userId, resourceId])
   @@index([userId, moduleId])
   @@index([resourceId])
+  @@index([userId])
+  @@index([completedAt])
 }
 
 model Exercise {
@@ -461,7 +465,10 @@ model UserProgress {
   user         User         @relation(fields: [userId], references: [id])
   learningPath LearningPath @relation(fields: [learningPathId], references: [id])
 
+  @@index([userId])
   @@index([learningPathId])
+  @@index([userId, learningPathId])
+  @@index([lastActivityAt])
 }
 
 model Completion {
@@ -528,7 +535,10 @@ model AiUsageLog {
   organization Organization @relation(fields: [organizationId], references: [id])
   user         User         @relation(fields: [userId], references: [id])
 
+  @@index([organizationId])
+  @@index([createdAt])
   @@index([organizationId, createdAt])
+  @@index([feature])
   @@index([reported])
 }
 
@@ -543,4 +553,5 @@ model AdminAuditLog {
 
   @@index([performedBy])
   @@index([targetOrgId])
+  @@index([createdAt])
 }

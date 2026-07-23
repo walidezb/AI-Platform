@@ -9,6 +9,8 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { BillingService, InvoiceSummary } from '../billing/billing.service';
 import { Prisma, OrgStatus } from '@prisma/client';
+import { CacheService } from '../cache/cache.service';
+import { CacheKeys, CacheTTL } from '../cache/cache-keys';
 
 export interface ImpersonationToken {
   token: string;
@@ -99,10 +101,19 @@ export class AdminService {
     private readonly jwtService: JwtService,
     private readonly config: ConfigService,
     private readonly billingService: BillingService,
+    private readonly cache: CacheService,
   ) {}
 
   /* ── Platform-wide stats ── */
   async getPlatformStats(): Promise<PlatformStats> {
+    return this.cache.getOrSet(
+      CacheKeys.adminStats(),
+      CacheTTL.ADMIN_STATS,
+      () => this._fetchPlatformStats(),
+    );
+  }
+
+  private async _fetchPlatformStats(): Promise<PlatformStats> {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 

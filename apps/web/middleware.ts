@@ -1,25 +1,48 @@
 import { clerkMiddleware, createRouteMatcher, clerkClient } from '@clerk/nextjs/server';
-import { NextResponse } from 'next/server';
+import createMiddleware from 'next-intl/middleware';
+import { NextRequest } from 'next/server';
+
+const intlMiddleware = createMiddleware({
+  locales: ['en', 'ar'],
+  defaultLocale: 'en',
+  localePrefix: 'as-needed',
+});
 
 const isPublicRoute = createRouteMatcher([
   '/',
+  '/(ar)?',
   '/sign-in(.*)',
+  '/(ar)?/sign-in(.*)',
   '/sign-up(.*)',
+  '/(ar)?/sign-up(.*)',
   '/register(.*)',
+  '/(ar)?/register(.*)',
   '/onboarding/setup',
+  '/(ar)?/onboarding/setup',
   '/onboarding/:token*',
+  '/(ar)?/onboarding/:token*',
   '/api/webhooks(.*)',
   '/design-system(.*)',
 ]);
 
 export default clerkMiddleware(async (auth, request) => {
-  const { userId, sessionClaims } = await auth();
+  const { pathname } = request.nextUrl;
+
+  // Skip intl middleware for API routes, Next.js internals, admin routes, or static files
+  if (
+    pathname.startsWith('/api/') ||
+    pathname.startsWith('/_next/') ||
+    pathname.startsWith('/admin') ||
+    pathname.includes('.')
+  ) {
+    return;
+  }
 
   // If it's not a public route, enforce authentication
   if (!isPublicRoute(request)) {
     await auth.protect();
 
-    // Check if the user has a role assigned in their public metadata
+    const { userId, sessionClaims } = await auth();
     const metadata = (sessionClaims?.publicMetadata || {}) as Record<string, unknown>;
     let role = metadata.role;
 
@@ -33,18 +56,15 @@ export default clerkMiddleware(async (auth, request) => {
       }
     }
 
-    // If signed in but no role is assigned yet, redirect to onboarding setup
-    if (userId && !role && request.nextUrl.pathname !== '/onboarding/setup') {
-      return NextResponse.redirect(new URL('/onboarding/setup', request.url));
+    if (userId && !role && !pathname.endsWith('/onboarding/setup')) {
+      const redirectUrl = new URL('/onboarding/setup', request.url);
+      return intlMiddleware(new NextRequest(redirectUrl, request));
     }
   }
+
+  return intlMiddleware(request);
 });
 
 export const config = {
-  matcher: [
-    // Skip Next.js internals and all static files
-    '/((?!_next|[^?]*\\.(?:html|css|js(?!on)|jpeg|jpg|png|gif|svg|ico|csv|docx|xlsx|zip|webmanifest)).*)',
-    // Always run for API routes
-    '/(api|trpc)(.*)',
-  ],
+  matcher: ['/((?!api|_next|_vercel|.*\\..*).*)'],
 };

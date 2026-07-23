@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@clerk/nextjs';
 import { motion } from 'framer-motion';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { Briefcase, Lightbulb, Loader2, Send } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Card } from '@/components/ui/card';
@@ -13,6 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { createApiClient } from '@/lib/api-client';
 import { ExerciseDetail, MCQOption } from '@/hooks/learner/useExercise';
 import { useDraft } from '@/hooks/learner/useDraft';
+import { AiUnavailableState } from '@/components/AiUnavailableState';
 
 interface ExerciseFormProps {
   exercise: ExerciseDetail;
@@ -60,11 +61,14 @@ export function ExerciseForm({
     return () => clearInterval(interval);
   }, [answer, saveDraft, isMCQ]);
 
+  const [showAiError, setShowAiError] = useState(false);
+
   const handleSubmit = async () => {
     const submission = isMCQ ? selectedOption! : answer.trim();
     if (!submission) return;
 
     setSubmitting(true);
+    setShowAiError(false);
     try {
       const client = createApiClient(getToken);
       const res = await client.post<{
@@ -83,12 +87,30 @@ export function ExerciseForm({
           `/learn/exercise/${exerciseId}/result?submissionId=${data.submissionId}`,
         );
       }
-    } catch {
-      toast.error('Submission failed. Please try again.');
+    } catch (err: unknown) {
+      /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+      const errorObj = err as any;
+      if (errorObj?.status >= 500 || errorObj?.response?.status >= 500) {
+        setShowAiError(true);
+      } else {
+        toast.error('Submission failed', 'Please check your answer and try again.');
+      }
     } finally {
       setSubmitting(false);
     }
   };
+
+  if (showAiError) {
+    return (
+      <AiUnavailableState
+        type="exercise"
+        onRetry={() => {
+          setShowAiError(false);
+          handleSubmit();
+        }}
+      />
+    );
+  }
 
   return (
     <div className="space-y-5">
@@ -156,12 +178,13 @@ export function ExerciseForm({
           {exercise.multipleChoiceOptions.map((opt: MCQOption) => (
             <button
               key={opt.label}
+              type="button"
               onClick={() => setSelected(opt.label)}
               className={cn(
-                'w-full text-left flex items-start gap-3 p-4',
-                'rounded-xl border transition-all duration-150',
+                'w-full text-left flex items-start gap-3 p-4 min-h-[48px]',
+                'rounded-xl border transition-all duration-150 active:scale-[0.99] cursor-pointer',
                 selectedOption === opt.label
-                  ? 'border-primary/60 bg-primary/5'
+                  ? 'border-primary/60 bg-primary/5 shadow-glow-sm'
                   : 'border-border hover:border-primary/30 hover:bg-secondary/30',
               )}
             >
@@ -204,12 +227,18 @@ export function ExerciseForm({
           <Textarea
             value={answer}
             onChange={(e) => setAnswer(e.target.value)}
+            onInput={(e) => {
+              const el = e.currentTarget;
+              el.style.height = 'auto';
+              el.style.height = `${el.scrollHeight}px`;
+            }}
+            dir="auto"
             placeholder={
               isScenario
                 ? 'Describe your approach to this scenario, the steps you would take, and the reasoning behind your decisions...'
                 : 'Write your answer here. Be specific and use examples from the module content...'
             }
-            className="min-h-[220px] text-sm leading-relaxed resize-y"
+            className="w-full min-h-[120px] text-sm leading-relaxed resize-none"
           />
         </div>
       )}

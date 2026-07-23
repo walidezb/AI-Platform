@@ -2,9 +2,19 @@ import { Test } from '@nestjs/testing';
 import { ManagerService } from '../manager.service';
 import { PrismaService } from '../../prisma/prisma.service';
 
+import { CacheService } from '../../cache/cache.service';
+
 describe('ManagerService', () => {
   let service: ManagerService;
   let prisma: jest.Mocked<any>;
+
+  const mockCacheService = {
+    get: jest.fn().mockResolvedValue(null),
+    set: jest.fn().mockResolvedValue(undefined),
+    del: jest.fn().mockResolvedValue(undefined),
+    delPattern: jest.fn().mockResolvedValue(undefined),
+    getOrSet: jest.fn((key, ttl, fetcher) => fetcher()),
+  };
 
   beforeEach(async () => {
     prisma = {
@@ -38,6 +48,7 @@ describe('ManagerService', () => {
       providers: [
         ManagerService,
         { provide: PrismaService, useValue: prisma },
+        { provide: CacheService, useValue: mockCacheService },
       ],
     }).compile();
 

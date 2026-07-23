@@ -7,11 +7,17 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { GeneratedPathDto } from './dto/generated-path.dto';
 
+import { CacheService } from '../cache/cache.service';
+import { CacheKeys, CacheTTL } from '../cache/cache-keys';
+
 @Injectable()
 export class PathsService {
   private readonly logger = new Logger(PathsService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly cache: CacheService,
+  ) {}
 
   async savePath(data: {
     assessmentId: string;
@@ -150,6 +156,9 @@ export class PathsService {
           `${path.milestones.reduce((a, m) => a + m.modules.length, 0)} modules`,
       );
 
+      await this.cache.del(CacheKeys.path(learningPath.id));
+      await this.cache.del(CacheKeys.pathList(organizationId, userId));
+
       return learningPath;
     });
   }
@@ -176,23 +185,31 @@ export class PathsService {
   }
 
   async getPathById(id: string, requestingUser: any) {
-    const path = await this.prisma.learningPath.findUnique({
-      where: { id },
-      include: {
-        user: { select: { id: true, fullName: true, avatarUrl: true } },
-        milestones: {
-          orderBy: { sequenceOrder: 'asc' },
+    const path = await this.cache.getOrSet(
+      CacheKeys.path(id),
+      CacheTTL.PATH,
+      async () => {
+        const found = await this.prisma.learningPath.findUnique({
+          where: { id },
           include: {
-            modules: {
+            user: { select: { id: true, fullName: true, avatarUrl: true } },
+            milestones: {
               orderBy: { sequenceOrder: 'asc' },
-              include: { resources: { orderBy: { sequenceOrder: 'asc' } } },
+              include: {
+                modules: {
+                  orderBy: { sequenceOrder: 'asc' },
+                  include: { resources: { orderBy: { sequenceOrder: 'asc' } } },
+                },
+                exercises: true,
+                _count: { select: { completions: true } },
+              },
             },
-            exercises: true,
-            _count: { select: { completions: true } },
           },
-        },
+        });
+        return found;
       },
-    });
+    );
+
     if (!path) throw new NotFoundException('Learning path not found');
 
     // Access control: own path or manager in same org

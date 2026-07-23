@@ -10,6 +10,8 @@ import { PrismaService } from '../prisma/prisma.service';
 import { EmailService } from '../email/email.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { BudgetAlertType } from '@prisma/client';
+import { CacheService } from '../cache/cache.service';
+import { CacheKeys, CacheTTL } from '../cache/cache-keys';
 
 export interface UsageDashboardDto {
   currentPeriod: {
@@ -67,6 +69,7 @@ export class UsageService {
     private readonly config: ConfigService,
     private readonly email: EmailService,
     private readonly notifs: NotificationsService,
+    private readonly cache: CacheService,
   ) {}
 
   /* ─── checkAndEnforceBudget ─── */
@@ -305,6 +308,9 @@ export class UsageService {
 
     // Check budget threshold
     await this.checkBudget(data.organizationId);
+
+    // Invalidate dashboard cache
+    await this.cache.del(CacheKeys.usageDashboard(data.organizationId));
   }
 
   async checkBudget(orgId: string): Promise<BudgetStatus> {
@@ -587,6 +593,14 @@ export class UsageService {
   }
 
   async getOrgUsageDashboard(orgId: string): Promise<UsageDashboardDto> {
+    return this.cache.getOrSet(
+      CacheKeys.usageDashboard(orgId),
+      CacheTTL.USAGE_DASHBOARD,
+      () => this._fetchOrgUsageDashboard(orgId),
+    );
+  }
+
+  private async _fetchOrgUsageDashboard(orgId: string): Promise<UsageDashboardDto> {
     const org = await this.prisma.organization.findUnique({
       where: { id: orgId },
       select: {

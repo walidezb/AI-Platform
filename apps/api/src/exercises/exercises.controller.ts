@@ -23,6 +23,7 @@ import { Public } from '../auth/decorators/public.decorator';
 import { SkipThrottle } from '@nestjs/throttler';
 import { UseGuards } from '@nestjs/common';
 import { BudgetGuard } from '../usage/budget.guard';
+import { assertOrgScope } from '../common/assert-org-scope';
 
 @Controller('exercises')
 export class ExercisesController {
@@ -57,11 +58,12 @@ export class ExercisesController {
 
     if (!exercise) throw new NotFoundException('Exercise not found');
 
-    // Org scope check
-    if (
-      exercise.milestone.learningPath.organizationId !== user.organizationId
-    ) {
-      throw new ForbiddenException();
+    if (user.role !== UserRole.PLATFORM_ADMIN) {
+      assertOrgScope(
+        exercise.milestone.learningPath.organizationId,
+        user.organizationId,
+        'Exercise',
+      );
     }
 
     // Get user's previous submissions for this exercise

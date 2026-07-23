@@ -28,6 +28,20 @@ export class UsersController {
     });
   }
 
+  @Patch('me/language')
+  @Roles(UserRole.LEARNER, UserRole.MANAGER, UserRole.ORG_ADMIN)
+  async updateLanguage(
+    @CurrentUser() user: any,
+    @Body() body: { language: 'en' | 'ar' },
+  ) {
+    const lang = (body.language || 'en').toUpperCase() as 'EN' | 'AR';
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { preferredLanguage: lang },
+    });
+    return { success: true };
+  }
+
   @Get('me/assessment')
   @Roles(UserRole.LEARNER)
   async getMyAssessment(@CurrentUser() user: any) {

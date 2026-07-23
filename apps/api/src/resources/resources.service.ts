@@ -1,6 +1,40 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { ResourceDto } from './dto/resource.dto';
+import { URL } from 'url';
+
+export function validateResourceUrl(url: string): void {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    throw new BadRequestException('Invalid URL format');
+  }
+
+  // Must be https
+  if (parsed.protocol !== 'https:') {
+    throw new BadRequestException('Only HTTPS URLs are permitted');
+  }
+
+  // Block private IP ranges (SSRF prevention)
+  const hostname = parsed.hostname;
+  const privatePatterns = [
+    /^localhost$/i,
+    /^127\./,
+    /^10\./,
+    /^172\.(1[6-9]|2\d|3[01])\./,
+    /^192\.168\./,
+    /^::1$/,
+    /^0\.0\.0\.0$/,
+    /^169\.254\./, // link-local
+    /\.internal$/,
+    /\.local$/,
+  ];
+
+  if (privatePatterns.some((p) => p.test(hostname))) {
+    throw new BadRequestException('Private or internal URLs are not permitted');
+  }
+}
 
 @Injectable()
 export class ResourcesService {
@@ -10,6 +44,12 @@ export class ResourcesService {
     moduleId: string,
     resources: ResourceDto[],
   ) {
+    // Validate all URLs before saving (SSRF prevention)
+    for (const r of resources) {
+      if (r.url) {
+        validateResourceUrl(r.url);
+      }
+    }
     // Verify module exists
     const module = await this.prisma.module.findUnique({
       where: { id: moduleId },

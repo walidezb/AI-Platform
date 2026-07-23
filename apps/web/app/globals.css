@@ -285,5 +285,14 @@
   .stagger-children > *:nth-child(3) { animation-delay: 160ms; }
   .stagger-children > *:nth-child(4) { animation-delay: 240ms; }
   .stagger-children > *:nth-child(5) { animation-delay: 320ms; }
-  .stagger-children > *:nth-child(6) { animation-delay: 400ms; }
+  /* Safe area inset for mobile notch */
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 12px);
+  }
+
+  /* Accessible focus ring */
+  :focus-visible {
+    outline: 2px solid hsl(var(--primary));
+    outline-offset: 2px;
+  }
 }

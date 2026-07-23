@@ -96,19 +96,19 @@ export function FilterToolbar({
       <div className="flex items-center gap-3 flex-wrap">
         {/* Search */}
         <div className="relative flex-1 min-w-[200px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search by name or email..."
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
-            className="pl-9 h-9 border-slate-800 bg-slate-950 text-slate-100 placeholder:text-slate-500"
+            className="ps-9 h-9 border-slate-800 bg-slate-950 text-slate-100 placeholder:text-slate-500"
             id="team-search"
           />
           {searchInput && (
             <button
               type="button"
               onClick={() => setSearchInput('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              className="absolute end-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
             >
               <X className="h-3.5 w-3.5" />
             </button>
@@ -190,7 +190,7 @@ export function FilterToolbar({
         </Select>
 
         {/* Sort */}
-        <div className="flex items-center gap-1.5 ml-auto">
+        <div className="flex items-center gap-1.5 ms-auto">
           <span className="text-xs text-muted-foreground shrink-0">Sort by</span>
           <Select
             value={filters.sortBy ?? 'name'}

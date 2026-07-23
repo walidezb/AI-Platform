@@ -38,12 +38,18 @@ import { OrgActiveGuard } from './guards/org-active.guard';
 
 import { InternalController } from './internal/internal.controller';
 
+import { CacheModule } from './cache/cache.module';
+import { ETagMiddleware } from './middleware/etag.middleware';
+import { TestSeedModule } from './test-seed/test-seed.module';
+import { HealthModule } from './health/health.module';
+
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
     }),
     EventEmitterModule.forRoot(),
+    CacheModule,
     PrismaModule,
     AuthModule,
     ThrottlerModule.forRootAsync({
@@ -102,6 +108,8 @@ import { InternalController } from './internal/internal.controller';
     AlertsModule,
     BillingModule,
     AdminModule,
+    HealthModule,
+    ...(process.env.NODE_ENV !== 'production' ? [TestSeedModule] : []),
   ],
   controllers: [AppController, InternalController],
   providers: [
@@ -139,5 +147,13 @@ export class AppModule implements NestModule, OnModuleInit {
 
   configure(consumer: MiddlewareConsumer) {
     consumer.apply(RequestLoggerMiddleware, AuditMiddleware).forRoutes('*');
+    consumer
+      .apply(ETagMiddleware)
+      .forRoutes(
+        '/manager/team',
+        '/paths/:id',
+        '/usage/org/:orgId',
+        '/progress/user/:id/resume',
+      );
   }
 }

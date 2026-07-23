@@ -59,7 +59,7 @@ import {
 } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
 import { createApiClient } from '@/lib/api-client';
-import { notify } from '@/lib/toast';
+import { toast } from '@/lib/toast';
 import { useTeamStats } from '@/hooks/manager/useTeamStats';
 import { useTeamOverview } from '@/hooks/manager/useTeamOverview';
 import {
@@ -69,22 +69,6 @@ import {
   useSkillRadar,
   useLearningVelocity,
 } from '@/hooks/manager/useAnalytics';
-
-function toast({
-  title,
-  description,
-  variant,
-}: {
-  title: string;
-  description?: string;
-  variant?: string;
-}) {
-  if (variant === 'destructive') {
-    notify.error(title, description);
-  } else {
-    notify.success(title, description);
-  }
-}
 
 const DOT_COLORS = {
   NOT_STARTED: '#334155',
@@ -189,16 +173,16 @@ export default function AnalyticsPage() {
       return await client.post(`/alerts/nudge/${userId}`);
     },
     onSuccess: () =>
-      toast({
-        title: '👋 Nudge sent!',
-        description: 'The employee will receive a motivational email.',
-      }),
+      toast.success(
+        '👋 Nudge sent!',
+        'The employee will receive a motivational email.',
+      ),
     onError: () =>
-      toast({ title: 'Failed to send nudge', variant: 'destructive' }),
+      toast.error('Failed to send nudge'),
   });
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 md:p-6 space-y-4 md:space-y-6">
       {/* ── Page header ── */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <PageHeader

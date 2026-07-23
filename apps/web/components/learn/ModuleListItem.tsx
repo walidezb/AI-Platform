@@ -18,15 +18,15 @@ export function ModuleListItem({ module, onClick }: ModuleListItemProps) {
     <div
       onClick={onClick}
       className={cn(
-        'flex items-center gap-3 py-2.5 px-3 rounded-lg',
-        'transition-all duration-150',
-        isComplete && 'text-emerald-400',
-        isCurrent && 'bg-primary/5 cursor-pointer hover:bg-primary/10',
-        isLocked && 'opacity-50 cursor-not-allowed text-muted-foreground',
+        'flex items-center gap-3 min-h-[48px] px-3.5 py-3 rounded-xl border border-border/80',
+        'transition-all duration-150 active:scale-[0.995]',
+        isComplete && 'text-emerald-400 border-emerald-500/20 bg-emerald-500/5',
+        isCurrent && 'bg-primary/5 border-primary/40 cursor-pointer hover:bg-primary/10 shadow-glow-sm',
+        isLocked && 'opacity-50 cursor-not-allowed text-muted-foreground border-border/50',
         !isLocked &&
           !isComplete &&
           !isCurrent &&
-          'cursor-pointer hover:bg-secondary/50',
+          'cursor-pointer hover:bg-secondary/50 hover:border-primary/30',
       )}
     >
       {/* Status icon */}

@@ -1,47 +1,47 @@
 'use client';
 
-import * as Sentry from '@sentry/nextjs';
-import { useEffect } from 'react';
+import React from 'react';
 
+// Catches errors in root layout — must have its own html/body
 export default function GlobalError({
-  error,
   reset,
 }: {
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-  useEffect(() => {
-    Sentry.captureException(error);
-  }, [error]);
-
   return (
-    <html>
-      <body>
-        <div style={{
-          minHeight: '100vh',
+    <html lang="en">
+      <body
+        style={{
+          background: '#0a0a0f',
+          color: '#e2e8f0',
+          fontFamily: 'system-ui, sans-serif',
           display: 'flex',
-          flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          background: '#0f0f1a',
-          color: 'white',
-          fontFamily: 'sans-serif',
-          gap: '16px'
-        }}>
-          <h1 style={{ fontSize: '2rem' }}>⚠️ Something went wrong</h1>
-          <p style={{ color: '#94a3b8' }}>
-            Our team has been notified. Please try again.
+          minHeight: '100vh',
+          margin: 0,
+        }}
+      >
+        <div style={{ textAlign: 'center', maxWidth: 400, padding: 32 }}>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>⚠️</div>
+          <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 8 }}>
+            Critical Error
+          </h1>
+          <p style={{ color: '#94a3b8', marginBottom: 24 }}>
+            A critical error occurred. Please refresh the page.
           </p>
           <button
+            type="button"
             onClick={reset}
             style={{
+              padding: '12px 24px',
               background: '#6366f1',
               color: 'white',
+              borderRadius: 8,
               border: 'none',
-              padding: '10px 24px',
-              borderRadius: '8px',
               cursor: 'pointer',
-              fontSize: '1rem'
+              fontWeight: 600,
             }}
           >
             Try Again

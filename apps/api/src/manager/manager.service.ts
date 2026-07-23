@@ -1,5 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { CacheService } from '../cache/cache.service';
+import { CacheKeys, CacheTTL } from '../cache/cache-keys';
 
 export interface TeamStats {
   total: number;
@@ -208,7 +210,10 @@ export interface EmployeeDetailDto {
 
 @Injectable()
 export class ManagerService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly cache: CacheService,
+  ) {}
 
   /**
    * Full team overview: aggregate stats + employee list.
@@ -219,6 +224,24 @@ export class ManagerService {
   }
 
   async getTeamOverviewFiltered(
+    orgId: string,
+    params: TeamFilterParams,
+  ): Promise<{
+    stats: TeamStats;
+    employees: EmployeeOverview[];
+    pagination: PaginationMeta;
+  }> {
+    const filterKey = JSON.stringify(params);
+    const cacheKey = CacheKeys.teamOverview(orgId, filterKey);
+
+    return this.cache.getOrSet(
+      cacheKey,
+      CacheTTL.TEAM_OVERVIEW,
+      () => this._fetchTeamOverviewFiltered(orgId, params),
+    );
+  }
+
+  private async _fetchTeamOverviewFiltered(
     orgId: string,
     params: TeamFilterParams,
   ): Promise<{

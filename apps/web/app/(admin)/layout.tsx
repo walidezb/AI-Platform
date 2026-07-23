@@ -13,6 +13,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 function FullPageSpinner() {
   return (
@@ -129,7 +130,9 @@ export default function AdminLayout({
 
       {/* ── Main ── */}
       <main className="flex-1 overflow-y-auto bg-slate-950/20">
-        {children}
+        <ErrorBoundary>
+          {children}
+        </ErrorBoundary>
       </main>
     </div>
   );

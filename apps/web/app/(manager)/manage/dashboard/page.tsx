@@ -28,10 +28,14 @@ import {
   Cell,
 } from 'recharts';
 
+import { useTranslations } from 'next-intl';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { LoadingSkeleton } from '@/components/ui/LoadingSkeleton';
+import { Skeleton } from '@/components/ui/skeleton';
+import { SkeletonManagerDashboard } from '@/components/skeletons';
+import { ApiErrorState } from '@/components/ApiErrorState';
+import { useApiError } from '@/hooks/useApiError';
 import { StatCard } from '@/components/manager/StatCard';
 import { EmployeeTable } from '@/components/manager/EmployeeTable';
 import { useTeamOverview } from '@/hooks/manager/useTeamOverview';
@@ -39,10 +43,15 @@ import { useTeamStats } from '@/hooks/manager/useTeamStats';
 import { useTeamTrends } from '@/hooks/manager/useTeamTrends';
 
 export default function ManagerDashboard() {
+  const t = useTranslations('manager');
   const router = useRouter();
-  const { data, isLoading } = useTeamOverview();
+  const { data, isLoading, isError, error, refetch } = useTeamOverview();
+  const { status, message } = useApiError(error);
   const { data: timeSeries } = useTeamStats(30);
   const { data: trendsData } = useTeamTrends();
+
+  if (isLoading) return <SkeletonManagerDashboard />;
+  if (isError) return <ApiErrorState status={status} message={message} onRetry={refetch} />;
 
   const stats = data?.stats;
   const employees = data?.employees ?? [];
@@ -60,10 +69,10 @@ export default function ManagerDashboard() {
     : [];
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="p-4 md:p-6 space-y-4 md:space-y-6">
       {/* Page header */}
       <PageHeader
-        title="Team Dashboard"
+        title={t('teamOverview')}
         subtitle="Monitor your team's learning progress"
         action={
           <Button
@@ -118,17 +127,17 @@ export default function ManagerDashboard() {
 
       {/* ROW 1 — Stats cards (6 cards) */}
       {isLoading ? (
-        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
           {Array(6)
             .fill(0)
             .map((_, i) => (
-              <Card key={i} className="p-5 border-slate-800 bg-slate-900/60">
-                <LoadingSkeleton className="h-16" />
+              <Card key={i} className="p-4 border-slate-800 bg-slate-900/60">
+                <Skeleton className="h-16" />
               </Card>
             ))}
         </div>
       ) : (
-        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
           <StatCard
             label="Total Employees"
             value={stats?.total ?? 0}
@@ -173,9 +182,9 @@ export default function ManagerDashboard() {
       )}
 
       {/* ROW 2 — Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         {/* Line chart — Daily Active Learners */}
-        <Card className="lg:col-span-2 p-5 border-slate-800 bg-slate-900/60">
+        <Card className="p-4 md:p-5 border-slate-800 bg-slate-900/60">
           <p className="text-sm font-semibold mb-4 flex items-center gap-2 text-slate-100">
             <Activity className="h-4 w-4 text-indigo-400" />
             Daily Active Learners — Last 30 Days
@@ -318,7 +327,7 @@ export default function ManagerDashboard() {
           </Button>
         </div>
         {isLoading ? (
-          <LoadingSkeleton className="h-64" />
+          <Skeleton className="h-64" />
         ) : (
           <EmployeeTable
             employees={employees}

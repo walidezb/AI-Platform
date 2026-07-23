@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, User, Send, Loader2, AlertTriangle } from 'lucide-react';
+import { Sparkles, User, Send, Loader2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { Logo } from '@/components/ui/Logo';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,9 @@ import { Card } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { useAssessmentDraft, DraftMessage } from '@/hooks/onboarding/useAssessmentDraft';
 import { formatRelativeTime } from '@/lib/utils/date';
+import { AiUnavailableState } from '@/components/AiUnavailableState';
+
+import { useTranslations } from 'next-intl';
 
 interface ChatMessage {
   id: string;
@@ -26,6 +29,7 @@ interface ChatInterfaceProps {
 }
 
 export function ChatInterface({ token }: ChatInterfaceProps) {
+  const t = useTranslations('onboarding');
   const router = useRouter();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState('');
@@ -273,16 +277,7 @@ export function ChatInterface({ token }: ChatInterfaceProps) {
   if (budgetExceeded) {
     return (
       <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 text-center">
-        <div className="h-16 w-16 rounded-2xl bg-amber-500/10 flex items-center justify-center mb-4">
-          <AlertTriangle className="h-8 w-8 text-amber-400" />
-        </div>
-        <h2 className="text-xl font-bold text-slate-100">
-          AI Assessment Unavailable
-        </h2>
-        <p className="text-slate-400 max-w-sm text-sm mt-2">
-          Your organization&apos;s AI budget has been reached for this billing
-          period. Please contact your administrator to resume your assessment.
-        </p>
+        <AiUnavailableState type="assessment" />
       </div>
     );
   }
@@ -304,7 +299,7 @@ export function ChatInterface({ token }: ChatInterfaceProps) {
   const progressPct = Math.min(Math.round((userTurnCount / TOTAL_TURNS) * 100), 100);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col relative overflow-hidden">
+    <div className="h-[calc(100dvh-56px)] md:h-[600px] min-h-[100dvh] bg-slate-950 text-slate-100 flex flex-col relative overflow-hidden">
       {/* Visual background layers */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-950/30 via-slate-950 to-slate-950 pointer-events-none" />
       <div 
@@ -316,7 +311,7 @@ export function ChatInterface({ token }: ChatInterfaceProps) {
       />
 
       {/* HEADER (sticky top) */}
-      <div className="sticky top-0 z-20 border-b border-slate-800 bg-slate-950/80 backdrop-blur-md px-6 py-4">
+      <div className="sticky top-0 z-20 border-b border-slate-800 bg-slate-950/80 backdrop-blur-md px-4 sm:px-6 py-3">
         <div className="max-w-3xl mx-auto">
           <div className="flex items-center justify-between mb-2">
             <Logo size="sm" />
@@ -343,7 +338,7 @@ export function ChatInterface({ token }: ChatInterfaceProps) {
         <motion.div
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mx-auto max-w-3xl px-6 pt-4 relative z-30 w-full"
+          className="mx-auto max-w-3xl px-4 sm:px-6 pt-4 relative z-30 w-full"
         >
           <Card className="p-4 border-amber-500/30 bg-amber-500/10 text-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
@@ -385,8 +380,8 @@ export function ChatInterface({ token }: ChatInterfaceProps) {
       )}
 
       {/* MESSAGES AREA (scrollable) */}
-      <div className="flex-1 overflow-y-auto px-6 py-8 relative z-10">
-        <div className="max-w-3xl mx-auto space-y-6">
+      <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-6 relative z-10">
+        <div className="max-w-3xl mx-auto space-y-4 sm:space-y-6">
           <AnimatePresence initial={false}>
             {messages.map((message) => (
               <motion.div
@@ -394,7 +389,7 @@ export function ChatInterface({ token }: ChatInterfaceProps) {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3 }}
-                className={`flex items-start gap-4 ${
+                className={`flex items-start gap-3 sm:gap-4 ${
                   message.role === 'user' ? 'flex-row-reverse' : ''
                 }`}
               >
@@ -414,9 +409,9 @@ export function ChatInterface({ token }: ChatInterfaceProps) {
                 </div>
 
                 {/* Message Box */}
-                <div className="max-w-[75%]">
+                <div className="max-w-[90%] md:max-w-[75%]">
                   <div
-                    className={`rounded-2xl px-5 py-3.5 text-sm leading-relaxed border ${
+                    className={`rounded-2xl px-4 py-3 sm:px-5 sm:py-3.5 text-sm leading-relaxed border ${
                       message.role === 'assistant'
                         ? 'bg-slate-900/60 border-slate-800/80 rounded-tl-sm text-slate-100 shadow-xl'
                         : 'bg-indigo-600/10 border-indigo-500/20 rounded-tr-sm text-slate-100 shadow-md'
@@ -439,14 +434,14 @@ export function ChatInterface({ token }: ChatInterfaceProps) {
       </div>
 
       {/* INPUT BAR (sticky bottom) */}
-      <div className="sticky bottom-0 border-t border-slate-800 bg-slate-950/90 backdrop-blur-md p-6 z-20">
+      <div className="sticky bottom-0 border-t border-slate-800 bg-slate-950/90 backdrop-blur-md p-4 pb-safe z-20">
         <div className="max-w-3xl mx-auto">
           <form onSubmit={handleFormSubmit} className="flex gap-4">
             <Input
               ref={inputRef}
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
-              placeholder={isComplete ? "Assessment complete!" : "Type your answer..."}
+              placeholder={isComplete ? t('assessmentDone') : t('typeMessage')}
               disabled={isStreaming || isComplete}
               className="flex-1 bg-slate-900 border-slate-850 text-slate-100 text-sm h-12 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 px-4"
               maxLength={2000}

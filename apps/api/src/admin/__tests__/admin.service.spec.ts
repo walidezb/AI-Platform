@@ -6,11 +6,21 @@ import { AdminService } from '../admin.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import { BillingService } from '../../billing/billing.service';
 
+import { CacheService } from '../../cache/cache.service';
+
 describe('AdminService', () => {
   let service: AdminService;
   let prisma: any;
   let jwtService: any;
   let billingService: any;
+
+  const mockCacheService = {
+    get: jest.fn().mockResolvedValue(null),
+    set: jest.fn().mockResolvedValue(undefined),
+    del: jest.fn().mockResolvedValue(undefined),
+    delPattern: jest.fn().mockResolvedValue(undefined),
+    getOrSet: jest.fn((key, ttl, fetcher) => fetcher()),
+  };
 
   beforeEach(async () => {
     prisma = {
@@ -53,6 +63,7 @@ describe('AdminService', () => {
         { provide: PrismaService, useValue: prisma },
         { provide: JwtService, useValue: jwtService },
         { provide: BillingService, useValue: billingService },
+        { provide: CacheService, useValue: mockCacheService },
         {
           provide: ConfigService,
           useValue: { get: jest.fn().mockReturnValue('http://localhost:3000') },

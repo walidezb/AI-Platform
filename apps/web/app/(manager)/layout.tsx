@@ -4,6 +4,9 @@ import { requireAuth } from '@/lib/auth';
 import { serverFetch } from '@/lib/api-server';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { ImpersonationBanner } from '@/components/admin/ImpersonationBanner';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
+
+import { getTranslations } from 'next-intl/server';
 
 interface User {
   id: string;
@@ -43,21 +46,23 @@ export default async function ManagerLayout({
     redirect('/learn/dashboard');
   }
 
+  const tNav = await getTranslations('nav');
+
   const navItems = [
-    { label: 'Dashboard',   href: '/manage/dashboard',   icon: 'dashboard' as const },
-    { label: 'My Team',     href: '/manage/team',        icon: 'users' as const },
-    { label: 'Analytics',   href: '/manage/analytics',   icon: 'analytics' as const },
-    { label: 'Invitations', href: '/manage/invitations', icon: 'mail' as const },
+    { label: tNav('dashboard'),   href: '/manage/dashboard',   icon: 'dashboard' as const },
+    { label: tNav('team'),        href: '/manage/team',        icon: 'users' as const },
+    { label: tNav('analytics'),   href: '/manage/analytics',   icon: 'analytics' as const },
+    { label: tNav('invitations'), href: '/manage/invitations', icon: 'mail' as const },
     ...(user.role === 'ORG_ADMIN' || user.role === 'PLATFORM_ADMIN'
       ? [
           {
-            label: 'Billing',
+            label: tNav('billing'),
             href: '/manage/billing',
             icon: 'billing' as const,
           },
         ]
       : []),
-    { label: 'Settings',    href: '/manage/settings',    icon: 'settings' as const },
+    { label: tNav('settings'),    href: '/manage/settings',    icon: 'settings' as const },
   ];
 
   return (
@@ -70,7 +75,9 @@ export default async function ManagerLayout({
         org={user.organization || { name: 'Your Workspace', logoUrl: null, planTier: 'STARTER' }}
         user={user}
       >
-        {children}
+        <ErrorBoundary>
+          {children}
+        </ErrorBoundary>
       </DashboardLayout>
     </>
   );

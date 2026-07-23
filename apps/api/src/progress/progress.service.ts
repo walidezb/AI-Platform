@@ -1,11 +1,37 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { CacheService } from '../cache/cache.service';
+import { CacheKeys, CacheTTL } from '../cache/cache-keys';
 
 @Injectable()
 export class ProgressService {
   private readonly logger = new Logger(ProgressService.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private cache: CacheService,
+  ) {}
+
+  async getResumePoint(userId: string) {
+    return this.cache.getOrSet(
+      CacheKeys.resumePoint(userId),
+      CacheTTL.RESUME_POINT,
+      async () => {
+        const progress = await this.prisma.userProgress.findUnique({
+          where: { userId },
+          select: {
+            currentModuleId: true,
+            currentMilestoneId: true,
+            learningPathId: true,
+            lastActivityAt: true,
+            overallCompletionPct: true,
+            streakDays: true,
+          },
+        });
+        return progress;
+      },
+    );
+  }
 
   // ── MAIN ENTRY POINT ───────────────────────────────────
 
@@ -82,6 +108,16 @@ export class ProgressService {
 
     // 6. Recompute overall completion %
     await this.recomputeOverallProgress(userId, pathId);
+
+    // 7. Invalidate caches
+    await this.cache.del(CacheKeys.resumePoint(userId));
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { organizationId: true },
+    });
+    if (user) {
+      await this.cache.delPattern(`team:${user.organizationId}:overview:*`);
+    }
 
     return {
       resourceId,

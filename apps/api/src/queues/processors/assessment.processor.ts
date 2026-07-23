@@ -31,6 +31,8 @@ export class AssessmentProcessor {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'X-Internal-Secret':
+            this.config.get('INTERNAL_SERVICE_SECRET') ?? '',
         },
         body: JSON.stringify({
           assessmentId: job.data.assessmentId,

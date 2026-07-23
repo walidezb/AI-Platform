@@ -51,7 +51,11 @@ export class AssessmentService {
 
     const res = await fetch(`${this.aiServiceUrl}/assessment/start`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Internal-Secret':
+          this.config.get('INTERNAL_SERVICE_SECRET') ?? '',
+      },
       body: JSON.stringify({
         userId: user.id,
         organizationId: org.id,

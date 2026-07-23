@@ -7,7 +7,9 @@ import { Map } from 'lucide-react';
 import { useLearningPath } from '@/hooks/learner/useLearningPath';
 import { PathHeader } from '@/components/learn/PathHeader';
 import { MilestoneCard } from '@/components/learn/MilestoneCard';
-import { PathOverviewSkeleton } from '@/components/learn/PathOverviewSkeleton';
+import { SkeletonPathOverview } from '@/components/skeletons';
+import { ApiErrorState } from '@/components/ApiErrorState';
+import { useApiError } from '@/hooks/useApiError';
 import { EmptyState } from '@/components/ui/EmptyState';
 
 export default function PathOverviewPage({
@@ -18,10 +20,12 @@ export default function PathOverviewPage({
   const resolvedParams = React.use(Promise.resolve(params));
   const { pathId } = resolvedParams;
 
-  const { data: path, isLoading } = useLearningPath(pathId);
+  const { data: path, isLoading, isError, error, refetch } = useLearningPath(pathId);
+  const { status, message } = useApiError(error);
   const router = useRouter();
 
-  if (isLoading) return <PathOverviewSkeleton />;
+  if (isLoading) return <SkeletonPathOverview />;
+  if (isError) return <ApiErrorState status={status} message={message} onRetry={refetch} />;
   if (!path) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
